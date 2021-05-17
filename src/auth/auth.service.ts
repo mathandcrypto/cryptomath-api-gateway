@@ -93,4 +93,20 @@ export class AuthService {
       return [false, 'auth_request_error', null];
     }
   }
+
+  async logout(userId: number): Promise<[boolean, boolean]> {
+    try {
+      const {
+        isSessionDeleted,
+      } = await this.authPackageService.client
+        .deleteAuthSession({ userId })
+        .toPromise();
+
+      return [true, isSessionDeleted];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, false];
+    }
+  }
 }

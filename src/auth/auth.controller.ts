@@ -6,10 +6,12 @@ import {
   Body,
   InternalServerErrorException,
   UnauthorizedException,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthCredentialsRequestDTO } from './dto/auth-credentials-request.dto';
 
 @Controller('auth')
@@ -69,5 +71,24 @@ export class AuthController {
       access_token: accessToken,
       refresh_token: refreshToken,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/logout')
+  @HttpCode(200)
+  async logout(@Req() request) {
+    const userId = request.user.id;
+
+    const [logoutStatus, isSessionDeleted] = await this.authService.logout(
+      userId,
+    );
+
+    if (!logoutStatus) {
+      throw new InternalServerErrorException(
+        'Error requesting the auth service',
+      );
+    } else if (!isSessionDeleted) {
+      throw new InternalServerErrorException('Failed to delete auth session');
+    }
   }
 }

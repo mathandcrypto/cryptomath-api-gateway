@@ -31,7 +31,7 @@
     "@nestjs/platform-fastify": "^7.6.15",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
-    "cryptomath-api-proto": "github:mathandcrypto/cryptomath-api-proto",
+    "cryptomath-api-proto": "file:../cryptomath-api-proto",
     "grpc": "^1.24.7",
     "joi": "^17.4.0",
     "passport": "^0.4.1",
