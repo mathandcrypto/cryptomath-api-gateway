@@ -6,7 +6,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserPackageModule } from '@providers/grpc/user/user-package.module';
 import { AuthPackageModule } from '@providers/grpc/auth/auth-package.module';
 import { UsersModule } from '@models/users/users.module';
-import { UsersService } from '@models/users/users.service';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalStrategy } from './strategies/local.strategy';
@@ -40,13 +39,7 @@ import { AuthController } from './auth.controller';
     UserPackageModule,
     AuthPackageModule,
   ],
-  providers: [
-    AuthService,
-    TokenService,
-    LocalStrategy,
-    UsersService,
-    JwtStrategy,
-  ],
+  providers: [AuthService, TokenService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
 })
 export class AuthModule {}

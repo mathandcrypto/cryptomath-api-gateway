@@ -1,18 +1,24 @@
 import {
-  Controller,
-  UseGuards,
-  Post,
-  HttpCode,
   Body,
+  Controller,
+  HttpCode,
   InternalServerErrorException,
-  UnauthorizedException,
+  Post,
   Req,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { LoginErrorType } from './enums/login-error-type.enum';
+import { RefreshErrorType } from './enums/refresh-error-type.enum';
+import { LogoutErrorType } from './enums/logout-error-type.enum';
 import { TokenService } from './token.service';
+import { DecodeRefreshTokenErrorType } from './enums/decode-refresh-token-error-type.enum';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { AuthCredentialsRequestDTO } from './dto/auth-credentials-request.dto';
+import { LoginRequestDTO } from './dto/login-request.dto';
+import { RefreshRequestDTO } from './dto/refresh-request.dto';
+import { ResolveRefreshTokenErrorType } from '@auth/enums/resolve-refresh-token-error-type.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -24,37 +30,35 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   @HttpCode(200)
-  async login(@Body() { email, password }: AuthCredentialsRequestDTO) {
-    const [isLoggedIn, errorType, loginResponse] = await this.authService.login(
-      email,
-      password,
-    );
+  async login(@Body() { email, password }: LoginRequestDTO) {
+    const [
+      loginStatus,
+      errorType,
+      loginResponse,
+    ] = await this.authService.login(email, password);
 
-    if (!isLoggedIn) {
+    if (!loginStatus) {
       switch (errorType) {
-        case 'user_request_error':
-          throw new InternalServerErrorException(
-            'Error requesting the user service',
-          );
-        case 'user_not_exists':
+        case LoginErrorType.FindUserError:
+          throw new InternalServerErrorException('Failed to find user');
+        case LoginErrorType.UserNotExists:
           throw new UnauthorizedException('User with this email was not found');
-        case 'invalid_password':
+        case LoginErrorType.InvalidPassword:
           throw new UnauthorizedException('Invalid user password');
-        case 'auth_request_error':
+        case LoginErrorType.CreateAccessSessionError:
           throw new InternalServerErrorException(
-            'Error requesting the auth service',
+            'Failed to create access session',
           );
-        case 'auth_session_not_created':
-          throw new InternalServerErrorException(
-            'Failed to create auth session',
-          );
+        case LoginErrorType.AccessSessionNotCreated:
+          throw new InternalServerErrorException('Access session not created');
+        case LoginErrorType.RefreshSessionNotCreated:
+          throw new InternalServerErrorException('Refresh session not created');
         default:
           throw new InternalServerErrorException('Authorization error');
       }
     }
 
     const { userId, accessSecret, refreshSecret } = loginResponse;
-
     const accessToken = await this.tokenService.generateAccessToken(
       userId,
       email,
@@ -73,22 +77,104 @@ export class AuthController {
     };
   }
 
+  @Post('/refresh')
+  @HttpCode(200)
+  async refresh(@Body() { refresh_token }: RefreshRequestDTO) {
+    const [
+      resolveStatus,
+      resolveErrorType,
+      resolveResponse,
+    ] = await this.tokenService.resolveRefreshToken(refresh_token);
+
+    if (!resolveStatus) {
+      switch (resolveErrorType) {
+        case DecodeRefreshTokenErrorType.TokenExpired:
+          throw new UnauthorizedException('Refresh token expired');
+        case DecodeRefreshTokenErrorType.TokenMalformed:
+          throw new UnauthorizedException('Refresh token malformed');
+        case ResolveRefreshTokenErrorType.ValidateRefreshSessionError:
+          throw new UnauthorizedException('Failed to validate refresh session');
+        case ResolveRefreshTokenErrorType.RefreshSessionNotExists:
+          throw new UnauthorizedException('Refresh session does not exist');
+        case ResolveRefreshTokenErrorType.RefreshSessionExpired:
+          throw new UnauthorizedException('Refresh session expired');
+        default:
+          throw new InternalServerErrorException(
+            'Failed to resolve refresh token',
+          );
+      }
+    }
+
+    const { userId, refreshSecret, email } = resolveResponse;
+    const [
+      refreshStatus,
+      refreshErrorType,
+      refreshResponse,
+    ] = await this.authService.refresh(userId, refreshSecret);
+
+    if (!refreshStatus) {
+      switch (refreshErrorType) {
+        case RefreshErrorType.DeleteRefreshSessionError:
+          throw new InternalServerErrorException(
+            'Failed to delete refresh session',
+          );
+        case RefreshErrorType.RefreshSessionNotDeleted:
+          throw new InternalServerErrorException('Refresh session not deleted');
+        case RefreshErrorType.CreateAccessSessionError:
+          throw new InternalServerErrorException(
+            'Failed to create access session',
+          );
+        case RefreshErrorType.AccessSessionNotCreated:
+          throw new InternalServerErrorException('Access session not created');
+        case RefreshErrorType.RefreshSessionNotCreated:
+          throw new InternalServerErrorException('Refresh session not created');
+        default:
+          throw new InternalServerErrorException(
+            'Failed to refresh auth sessions',
+          );
+      }
+    }
+
+    const { accessSecret, refreshSecret: newRefreshSecret } = refreshResponse;
+    const accessToken = await this.tokenService.generateAccessToken(
+      userId,
+      email,
+      accessSecret,
+    );
+    const refreshToken = await this.tokenService.generateRefreshToken(
+      userId,
+      email,
+      newRefreshSecret,
+    );
+
+    return {
+      token_type: 'bearer',
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('/logout')
   @HttpCode(200)
   async logout(@Req() request) {
     const userId = request.user.id;
 
-    const [logoutStatus, isSessionDeleted] = await this.authService.logout(
+    const [logoutStatus, logoutErrorType] = await this.authService.logout(
       userId,
     );
 
     if (!logoutStatus) {
-      throw new InternalServerErrorException(
-        'Error requesting the auth service',
-      );
-    } else if (!isSessionDeleted) {
-      throw new InternalServerErrorException('Failed to delete auth session');
+      switch (logoutErrorType) {
+        case LogoutErrorType.DeleteAllUserSessionsError:
+          throw new InternalServerErrorException(
+            'Failed to delete all user sessions',
+          );
+        case LogoutErrorType.SessionsNotDeleted:
+          throw new InternalServerErrorException('User sessions not deleted');
+        default:
+          throw new InternalServerErrorException('Unknown logout error');
+      }
     }
   }
 }

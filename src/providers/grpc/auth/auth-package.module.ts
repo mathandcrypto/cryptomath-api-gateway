@@ -4,6 +4,7 @@ import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { AUTH_PACKAGE_NAME } from 'cryptomath-api-proto/proto/build/auth';
 import { AuthConfigService } from '@config/auth/config.service';
 import { AuthPackageService } from './auth-package.service';
+import { AuthPackageMethodsService } from './auth-package-methods.service';
 import { join } from 'path';
 
 @Module({
@@ -30,7 +31,8 @@ import { join } from 'path';
       },
     },
     AuthPackageService,
+    AuthPackageMethodsService,
   ],
-  exports: [AuthPackageService],
+  exports: [AuthPackageService, AuthPackageMethodsService],
 })
 export class AuthPackageModule {}

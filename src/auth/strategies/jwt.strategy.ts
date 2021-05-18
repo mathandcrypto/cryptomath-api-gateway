@@ -7,15 +7,15 @@ import {
 } from '@nestjs/common';
 import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { AuthService } from '@auth/auth.service';
-import { UsersService } from '@models/users/users.service';
+import { AuthPackageMethodsService } from '@providers/grpc/auth/auth-package-methods.service';
+import { UserPackageMethodsService } from '@providers/grpc/user/user-package-methods.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly jwtConfigService: JwtConfigService,
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
+    private readonly authPackageMethodsService: AuthPackageMethodsService,
+    private readonly userPackageMethodsService: UserPackageMethodsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -28,40 +28,41 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const [
       validateStatus,
       validateAuthSessionResponse,
-    ] = await this.authService.validateAuthSession(id, secret);
+    ] = await this.authPackageMethodsService.validateAccessSession(id, secret);
 
     if (!validateStatus) {
       throw new InternalServerErrorException(
         'Error requesting the auth service',
       );
-    } else {
-      const { isSessionExists, isSessionExpired } = validateAuthSessionResponse;
-
-      if (!isSessionExists) {
-        throw new UnauthorizedException(
-          'Auth session with this user id and secret was not found',
-        );
-      } else if (isSessionExpired) {
-        throw new UnauthorizedException('Auth session expired');
-      }
     }
 
-    const [findUserStatus, findUserResponse] = await this.usersService.findOne(
-      id,
-    );
+    const { isSessionExists, isSessionExpired } = validateAuthSessionResponse;
+
+    if (!isSessionExists) {
+      throw new UnauthorizedException(
+        'Auth session with this user id and secret was not found',
+      );
+    } else if (isSessionExpired) {
+      throw new UnauthorizedException('Auth session expired');
+    }
+
+    const [
+      findUserStatus,
+      findUserResponse,
+    ] = await this.userPackageMethodsService.findOne(id);
 
     if (!findUserStatus) {
       throw new InternalServerErrorException(
         'Error requesting the user service',
       );
-    } else {
-      const { isUserExists, user } = findUserResponse;
-
-      if (!isUserExists) {
-        throw new UnauthorizedException('User with this id does not exist');
-      }
-
-      return { id: user.id, email: user.email };
     }
+
+    const { isUserExists, user } = findUserResponse;
+
+    if (!isUserExists) {
+      throw new UnauthorizedException('User with this id does not exist');
+    }
+
+    return { id: user.id, email: user.email };
   }
 }
