@@ -1,17 +1,15 @@
 import {
   Controller,
-  ForbiddenException,
   Get,
   InternalServerErrorException,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-package-methods.service';
-import { JwtHandleUserAuthGuard } from '@auth/guards/jwt-handle-user-auth.guard';
+import { GuestGuard } from '@auth/guards/guest.guard';
 import { CaptchaTokenService } from './captcha-token.service';
 
 @Controller('captcha')
-@UseGuards(JwtHandleUserAuthGuard)
+@UseGuards(GuestGuard)
 export class CaptchaController {
   constructor(
     private readonly captchaPackageMethodsService: CaptchaPackageMethodsService,
@@ -19,13 +17,7 @@ export class CaptchaController {
   ) {}
 
   @Get('/generate')
-  async generateCaptcha(@Req() request) {
-    if (request.user) {
-      throw new ForbiddenException(
-        'You cannot generate captcha tasks when you are logged in',
-      );
-    }
-
+  async generateCaptcha() {
     const [
       generateStatus,
       generateResponse,
