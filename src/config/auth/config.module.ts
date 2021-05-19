@@ -9,8 +9,8 @@ import { AuthConfigService } from './config.service';
     ConfigModule.forRoot({
       load: [configuration],
       validationSchema: Joi.object({
-        AUTH_SERVICE_PROTO_FILE: Joi.string(),
-        AUTH_SERVICE_URL: Joi.string(),
+        AUTH_SERVICE_PROTO_FILE: Joi.string().required(),
+        AUTH_SERVICE_URL: Joi.string().required(),
       }),
     }),
   ],
