@@ -5,12 +5,12 @@ import {
 } from '@nestjs/common';
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { UserPackageMethodsService } from '@providers/grpc/user/user-package-methods.service';
+import { UserPackageService } from '@providers/grpc/user/user-package.service';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly userPackageMethodsService: UserPackageMethodsService,
+    private readonly userPackageService: UserPackageService,
   ) {
     super({ usernameField: 'email' });
   }
@@ -19,7 +19,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     const [
       validateStatus,
       validateUserResponse,
-    ] = await this.userPackageMethodsService.findByEmailAndPassword(
+    ] = await this.userPackageService.findByEmailAndPassword(
       email,
       password,
     );

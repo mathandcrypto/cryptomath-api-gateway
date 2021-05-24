@@ -3,7 +3,7 @@ import {
   CAPTCHA_PACKAGE_NAME,
   CAPTCHA_SERVICE_NAME,
   CaptchaServiceClient,
-} from 'cryptomath-api-proto/proto/build/captcha';
+} from 'cryptomath-api-proto/types/captcha';
 import { ClientGrpc } from '@nestjs/microservices';
 
 @Injectable()

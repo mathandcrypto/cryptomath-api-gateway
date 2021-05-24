@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { UserConfigModule } from '@config/user/config.module';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { USER_PACKAGE_NAME } from 'cryptomath-api-proto/proto/build/user';
+import { USER_PACKAGE_NAME } from 'cryptomath-api-proto/types/user';
 import { UserConfigService } from '@config/user/config.service';
 import { UserPackageService } from './user-package.service';
-import { UserPackageMethodsService } from './user-package-methods.service';
 import { join } from 'path';
 
 @Module({
@@ -31,8 +30,7 @@ import { join } from 'path';
       },
     },
     UserPackageService,
-    UserPackageMethodsService,
   ],
-  exports: [UserPackageService, UserPackageMethodsService],
+  exports: [UserPackageService],
 })
 export class UserPackageModule {}

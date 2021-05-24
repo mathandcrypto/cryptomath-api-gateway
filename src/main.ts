@@ -23,8 +23,8 @@ async function bootstrap() {
     }),
   );
 
-  const appConfig: AppConfigService = app.get('AppConfigService');
-  const { port } = appConfig;
+  const appConfigService = app.get(AppConfigService);
+  const { port } = appConfigService;
 
   await app.listen(port);
 

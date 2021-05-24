@@ -1,41 +1,42 @@
 import { Injectable } from '@nestjs/common';
-import { UserPackageMethodsService } from '@providers/grpc/user/user-package-methods.service';
-import { AuthPackageMethodsService } from '@providers/grpc/auth/auth-package-methods.service';
-import { LoginErrorType } from './enums/login-error-type.enum';
-import { LogoutErrorType } from './enums/logout-error-type.enum';
-import { RefreshErrorType } from './enums/refresh-error-type.enum';
+import { UserPackageService } from '@providers/grpc/user/user-package.service';
+import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
+import { MailerService } from '@providers/rmq/mailer/mailer.service';
+import { LoginError } from './enums/login-error.enum';
+import { LogoutError } from './enums/logout-error.enum';
+import { RefreshError } from './enums/refresh-error.enum';
+import { RegisterError } from './enums/register-error.enum';
 import { LoginResponse } from './interfaces/login-response.interface';
 import { RefreshResponse } from './interfaces/refresh-response.interface';
+import { RegisterResponse } from './interfaces/register-response.interface';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userPackageMethodsService: UserPackageMethodsService,
-    private readonly authPackageMethodsService: AuthPackageMethodsService,
+    private readonly userPackageService: UserPackageService,
+    private readonly authPackageService: AuthPackageService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async login(
     email: string,
     password: string,
-  ): Promise<[boolean, LoginErrorType, LoginResponse]> {
+  ): Promise<[boolean, LoginError, LoginResponse]> {
     const [
       validateStatus,
       validateResponse,
-    ] = await this.userPackageMethodsService.findByEmailAndPassword(
-      email,
-      password,
-    );
+    ] = await this.userPackageService.findByEmailAndPassword(email, password);
 
     if (!validateStatus) {
-      return [false, LoginErrorType.FindUserError, null];
+      return [false, LoginError.FindUserError, null];
     }
 
     const { isUserExists, isValidPassword, user } = validateResponse;
 
     if (!isUserExists) {
-      return [false, LoginErrorType.UserNotExists, null];
+      return [false, LoginError.UserNotExists, null];
     } else if (!isValidPassword) {
-      return [false, LoginErrorType.InvalidPassword, null];
+      return [false, LoginError.InvalidPassword, null];
     }
 
     const { id: userId } = user;
@@ -43,10 +44,10 @@ export class AuthService {
     const [
       createSessionStatus,
       createSessionResponse,
-    ] = await this.authPackageMethodsService.createAccessSession(userId);
+    ] = await this.authPackageService.createAccessSession(userId);
 
     if (!createSessionStatus) {
-      return [false, LoginErrorType.CreateAccessSessionError, null];
+      return [false, LoginError.CreateAccessSessionError, null];
     }
 
     const {
@@ -57,28 +58,28 @@ export class AuthService {
     } = createSessionResponse;
 
     if (!isAccessSessionCreated) {
-      return [false, LoginErrorType.AccessSessionNotCreated, null];
+      return [false, LoginError.AccessSessionNotCreated, null];
     } else if (!isRefreshSessionCreated) {
-      return [false, LoginErrorType.RefreshSessionNotCreated, null];
+      return [false, LoginError.RefreshSessionNotCreated, null];
     }
 
     return [true, null, { userId, email, accessSecret, refreshSecret }];
   }
 
-  async logout(userId: number): Promise<[boolean, LogoutErrorType]> {
+  async logout(userId: number): Promise<[boolean, LogoutError]> {
     const [
       deleteSessionsStatus,
       deleteSessionsResponse,
-    ] = await this.authPackageMethodsService.deleteAllUserSessions(userId);
+    ] = await this.authPackageService.deleteAllUserSessions(userId);
 
     if (!deleteSessionsStatus) {
-      return [false, LogoutErrorType.DeleteAllUserSessionsError];
+      return [false, LogoutError.DeleteAllUserSessionsError];
     }
 
     const { isSessionsDeleted } = deleteSessionsResponse;
 
     if (!isSessionsDeleted) {
-      return [false, LogoutErrorType.SessionsNotDeleted];
+      return [false, LogoutError.SessionsNotDeleted];
     }
 
     return [true, null];
@@ -87,32 +88,32 @@ export class AuthService {
   async refresh(
     userId: number,
     refreshSecret: string,
-  ): Promise<[boolean, RefreshErrorType, RefreshResponse]> {
+  ): Promise<[boolean, RefreshError, RefreshResponse]> {
     const [
       deleteSessionStatus,
       deleteSessionResponse,
-    ] = await this.authPackageMethodsService.deleteRefreshSession(
+    ] = await this.authPackageService.deleteRefreshSession(
       userId,
       refreshSecret,
     );
 
     if (!deleteSessionStatus) {
-      return [false, RefreshErrorType.DeleteRefreshSessionError, null];
+      return [false, RefreshError.DeleteRefreshSessionError, null];
     }
 
     const { isSessionDeleted } = deleteSessionResponse;
 
     if (!isSessionDeleted) {
-      return [false, RefreshErrorType.RefreshSessionNotDeleted, null];
+      return [false, RefreshError.RefreshSessionNotDeleted, null];
     }
 
     const [
       createSessionStatus,
       createSessionResponse,
-    ] = await this.authPackageMethodsService.createAccessSession(userId);
+    ] = await this.authPackageService.createAccessSession(userId);
 
     if (!createSessionStatus) {
-      return [false, RefreshErrorType.CreateAccessSessionError, null];
+      return [false, RefreshError.CreateAccessSessionError, null];
     }
 
     const {
@@ -123,11 +124,49 @@ export class AuthService {
     } = createSessionResponse;
 
     if (!isAccessSessionCreated) {
-      return [false, RefreshErrorType.AccessSessionNotCreated, null];
+      return [false, RefreshError.AccessSessionNotCreated, null];
     } else if (!isRefreshSessionCreated) {
-      return [false, RefreshErrorType.RefreshSessionNotCreated, null];
+      return [false, RefreshError.RefreshSessionNotCreated, null];
     }
 
     return [true, null, { accessSecret, refreshSecret: newRefreshSecret }];
+  }
+
+  async register(
+    displayName: string,
+    email: string,
+    password: string,
+  ): Promise<[boolean, RegisterError, RegisterResponse]> {
+    const [
+      createStatus,
+      createResponse,
+    ] = await this.userPackageService.createUser(displayName, email, password);
+
+    if (!createStatus) {
+      return [false, RegisterError.CreateUserError, null];
+    }
+
+    const { isUserCreated, isUserAlreadyExists, createdUser } = createResponse;
+
+    if (isUserAlreadyExists) {
+      return [false, RegisterError.UserAlreadyExists, null];
+    } else if (!isUserCreated) {
+      return [false, RegisterError.UserNotCreated, null];
+    }
+
+    const { id, confirmCode } = createdUser;
+
+    const [sendMailStatus] = this.mailerService.sendRegisterNotify(
+      id,
+      email,
+      displayName,
+      confirmCode,
+    );
+
+    if (!sendMailStatus) {
+      return [false, RegisterError.SentNotifyMailError, null];
+    }
+
+    return [true, null, { userId: id }];
   }
 }

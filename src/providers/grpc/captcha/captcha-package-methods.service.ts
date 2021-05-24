@@ -3,7 +3,7 @@ import { CaptchaPackageService } from './captcha-package.service';
 import {
   GenerateTaskResponse,
   ValidateTaskResponse,
-} from 'cryptomath-api-proto/proto/build/captcha';
+} from 'cryptomath-api-proto/types/captcha';
 
 @Injectable()
 export class CaptchaPackageMethodsService {

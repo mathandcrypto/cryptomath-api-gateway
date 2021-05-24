@@ -5,7 +5,9 @@ import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtModule } from '@nestjs/jwt';
 import { UserPackageModule } from '@providers/grpc/user/user-package.module';
 import { AuthPackageModule } from '@providers/grpc/auth/auth-package.module';
+import { MailerModule } from '@providers/rmq/mailer/mailer.module';
 import { UsersModule } from '@models/users/users.module';
+import { CaptchaModule } from '@models/captcha/captcha.module';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalStrategy } from './strategies/local.strategy';
@@ -20,6 +22,7 @@ import { AuthController } from './auth.controller';
       session: false,
     }),
     UsersModule,
+    CaptchaModule,
     JwtConfigModule,
     JwtModule.registerAsync({
       imports: [JwtConfigModule],
@@ -38,6 +41,7 @@ import { AuthController } from './auth.controller';
     }),
     UserPackageModule,
     AuthPackageModule,
+    MailerModule,
   ],
   providers: [AuthService, TokenService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CaptchaConfigModule } from '@config/captcha/config.module';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { CAPTCHA_PACKAGE_NAME } from 'cryptomath-api-proto/proto/build/captcha';
+import { CAPTCHA_PACKAGE_NAME } from 'cryptomath-api-proto/types/captcha';
 import { CaptchaConfigService } from '@config/captcha/config.service';
 import { CaptchaPackageService } from './captcha-package.service';
 import { CaptchaPackageMethodsService } from './captcha-package-methods.service';

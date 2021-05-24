@@ -7,15 +7,15 @@ import {
 } from '@nestjs/common';
 import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { AuthPackageMethodsService } from '@providers/grpc/auth/auth-package-methods.service';
-import { UserPackageMethodsService } from '@providers/grpc/user/user-package-methods.service';
+import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
+import { UserPackageService } from '@providers/grpc/user/user-package.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly jwtConfigService: JwtConfigService,
-    private readonly authPackageMethodsService: AuthPackageMethodsService,
-    private readonly userPackageMethodsService: UserPackageMethodsService,
+    private readonly authPackageService: AuthPackageService,
+    private readonly userPackageService: UserPackageService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const [
       validateStatus,
       validateAuthSessionResponse,
-    ] = await this.authPackageMethodsService.validateAccessSession(id, secret);
+    ] = await this.authPackageService.validateAccessSession(id, secret);
 
     if (!validateStatus) {
       throw new InternalServerErrorException(
@@ -49,7 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const [
       findUserStatus,
       findUserResponse,
-    ] = await this.userPackageMethodsService.findOne(id);
+    ] = await this.userPackageService.findOne(id);
 
     if (!findUserStatus) {
       throw new InternalServerErrorException(

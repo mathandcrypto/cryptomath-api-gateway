@@ -3,17 +3,17 @@ import { JwtService } from '@nestjs/jwt';
 import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenExpiredError } from 'jsonwebtoken';
-import { AuthPackageMethodsService } from '@providers/grpc/auth/auth-package-methods.service';
+import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { ResolveRefreshTokenResponse } from './interfaces/resolve-refresh-token-response.interface';
-import { DecodeRefreshTokenErrorType } from './enums/decode-refresh-token-error-type.enum';
-import { ResolveRefreshTokenErrorType } from './enums/resolve-refresh-token-error-type.enum';
+import { ResolveRefreshTokenError } from './enums/resolve-refresh-token-error.enum';
+import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token-error.enum';
 
 @Injectable()
 export class TokenService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly jwtConfigService: JwtConfigService,
-    private readonly authPackageMethodsService: AuthPackageMethodsService,
+    private readonly authPackageService: AuthPackageService,
   ) {}
 
   async generateAccessToken(
@@ -44,20 +44,18 @@ export class TokenService {
 
   private async decodeRefreshToken(
     token: string,
-  ): Promise<
-    [boolean, DecodeRefreshTokenErrorType, JwtPayload & { sub: string }]
-  > {
+  ): Promise<[boolean, DecodeJwtTokenError, JwtPayload & { sub: string }]> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.jwtConfigService.refreshTokenSecret,
       });
 
       return [true, null, payload];
-    } catch (e) {
-      if (e instanceof TokenExpiredError) {
-        return [false, DecodeRefreshTokenErrorType.TokenExpired, null];
+    } catch (error) {
+      if (error instanceof TokenExpiredError) {
+        return [false, DecodeJwtTokenError.TokenExpired, null];
       } else {
-        return [false, DecodeRefreshTokenErrorType.TokenMalformed, null];
+        return [false, DecodeJwtTokenError.TokenMalformed, null];
       }
     }
   }
@@ -67,7 +65,7 @@ export class TokenService {
   ): Promise<
     [
       boolean,
-      DecodeRefreshTokenErrorType | ResolveRefreshTokenErrorType,
+      DecodeJwtTokenError | ResolveRefreshTokenError,
       ResolveRefreshTokenResponse,
     ]
   > {
@@ -84,7 +82,7 @@ export class TokenService {
     const [
       validateStatus,
       validateResponse,
-    ] = await this.authPackageMethodsService.validateRefreshSession(
+    ] = await this.authPackageService.validateRefreshSession(
       userId,
       refreshSecret,
     );
@@ -92,7 +90,7 @@ export class TokenService {
     if (!validateStatus) {
       return [
         false,
-        ResolveRefreshTokenErrorType.ValidateRefreshSessionError,
+        ResolveRefreshTokenError.ValidateRefreshSessionError,
         null,
       ];
     }
@@ -100,13 +98,9 @@ export class TokenService {
     const { isSessionExists, isSessionExpired } = validateResponse;
 
     if (!isSessionExists) {
-      return [
-        false,
-        ResolveRefreshTokenErrorType.RefreshSessionNotExists,
-        null,
-      ];
+      return [false, ResolveRefreshTokenError.RefreshSessionNotExists, null];
     } else if (isSessionExpired) {
-      return [false, ResolveRefreshTokenErrorType.RefreshSessionExpired, null];
+      return [false, ResolveRefreshTokenError.RefreshSessionExpired, null];
     }
 
     return [true, null, { userId, refreshSecret, email: sub }];
