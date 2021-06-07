@@ -19,7 +19,7 @@ export class MailerService {
     confirmCode: string,
   ): [boolean, Observable<SendRegisterNotifyResponse>] {
     try {
-      const observable = this.client.send<
+      const observable = this.client.emit<
         SendRegisterNotifyResponse,
         SendRegisterNotifyRequest
       >('send-register-notify', {
