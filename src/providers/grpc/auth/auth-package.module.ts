@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthConfigModule } from '@config/auth/config.module';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { AUTH_PACKAGE_NAME } from 'cryptomath-api-proto/proto/build/auth';
+import { AUTH_PACKAGE_NAME } from 'cryptomath-api-proto/types/auth';
 import { AuthConfigService } from '@config/auth/config.service';
 import { AuthPackageService } from './auth-package.service';
 import { join } from 'path';

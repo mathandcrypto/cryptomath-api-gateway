@@ -1,6 +1,6 @@
-export interface LoginResponse {
+import { RefreshResponse } from './refresh-response.interface';
+
+export interface LoginResponse extends RefreshResponse {
   userId: number;
   email: string;
-  accessSecret: string;
-  refreshSecret: string;
 }

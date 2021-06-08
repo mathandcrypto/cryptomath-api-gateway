@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { UserPackageModule } from '@providers/grpc/user/user-package.module';
-import { UsersService } from './users.service';
+import { MailerModule } from '@providers/rmq/mailer/mailer.module';
 import { UsersController } from './users.controller';
 
 @Module({
-  imports: [UserPackageModule],
-  providers: [UsersService],
+  imports: [UserPackageModule, MailerModule],
   controllers: [UsersController],
 })
 export class UsersModule {}

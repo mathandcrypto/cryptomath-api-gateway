@@ -9,8 +9,8 @@ import { UserConfigService } from './config.service';
     ConfigModule.forRoot({
       load: [configuration],
       validationSchema: Joi.object({
-        USER_SERVICE_PROTO_FILE: Joi.string(),
-        USER_SERVICE_URL: Joi.string(),
+        USER_SERVICE_PROTO_FILE: Joi.string().required(),
+        USER_SERVICE_URL: Joi.string().required(),
       }),
     }),
   ],
