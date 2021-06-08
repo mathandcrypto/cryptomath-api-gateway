@@ -33,7 +33,7 @@
     "amqplib": "^0.8.0",
     "class-transformer": "^0.4.0",
     "class-validator": "^0.13.1",
-    "cryptomath-api-message-types": "file:../cryptomath-api-message-types",
+    "cryptomath-api-message-types": "github:mathandcrypto/cryptomath-api-message-types",
     "cryptomath-api-proto": "github:mathandcrypto/cryptomath-api-proto",
     "grpc": "^1.24.7",
     "joi": "^17.4.0",
