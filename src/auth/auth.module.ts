@@ -7,6 +7,7 @@ import { UserPackageModule } from '@providers/grpc/user/user-package.module';
 import { AuthPackageModule } from '@providers/grpc/auth/auth-package.module';
 import { MailerModule } from '@providers/rmq/mailer/mailer.module';
 import { UsersModule } from '@models/users/users.module';
+import { UsersService } from '@models/users/users.service';
 import { CaptchaModule } from '@models/captcha/captcha.module';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
@@ -43,7 +44,13 @@ import { AuthController } from './auth.controller';
     AuthPackageModule,
     MailerModule,
   ],
-  providers: [AuthService, TokenService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    UsersService,
+    TokenService,
+    LocalStrategy,
+    JwtStrategy,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}

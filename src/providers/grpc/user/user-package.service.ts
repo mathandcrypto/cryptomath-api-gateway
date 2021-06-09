@@ -3,6 +3,7 @@ import {
   CreateUserResponse,
   FindByEmailAndPasswordResponse,
   FindOneResponse,
+  FindAvatarResponse,
   USER_PACKAGE_NAME,
   USER_SERVICE_NAME,
   UserServiceClient,
@@ -71,6 +72,18 @@ export class UserPackageService implements OnModuleInit {
           password,
         })
         .toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async findAvatar(userId: number): Promise<[boolean, FindAvatarResponse]> {
+    try {
+      const response = await this.client.findAvatar({ userId }).toPromise();
 
       return [true, response];
     } catch (error) {

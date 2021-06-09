@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  Get,
   HttpCode,
   InternalServerErrorException,
   Post,
@@ -24,8 +25,10 @@ import { RefreshRequestDTO } from './dto/refresh-request.dto';
 import { RegisterRequestDTO } from './dto/register-request.dto';
 import { ResolveRefreshTokenError } from './enums/resolve-refresh-token-error.enum';
 import { CaptchaService } from '@models/captcha/captcha.service';
+import { UsersService } from '@models/users/users.service';
 import { ValidateAnswerError } from '@models/captcha/enums/validate-answer-error.enum';
 import { RegisterExceptionError } from './enums/register-exception-error.enum';
+import { GetUserProfileError } from '@models/users/enums/get-user-profile-error.enum';
 
 @Controller('auth')
 export class AuthController {
@@ -33,6 +36,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
     private readonly captchaService: CaptchaService,
+    private readonly usersService: UsersService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
@@ -280,5 +284,32 @@ export class AuthController {
       user_id: userId,
       email,
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('user')
+  async getUser(@Req() request) {
+    const userId = request.user.id;
+
+    const [
+      userProfileStatus,
+      userProfileError,
+      userProfileResponse,
+    ] = await this.usersService.getUserProfile(userId);
+
+    if (!userProfileStatus) {
+      switch (userProfileError) {
+        case GetUserProfileError.FindUserError:
+          throw new InternalServerErrorException('Failed to find user');
+        case GetUserProfileError.UserNotExists:
+          throw new UnauthorizedException('User does not exist');
+        case GetUserProfileError.FindAvatarError:
+          throw new InternalServerErrorException('Failed to find user avatar');
+        default:
+          throw new InternalServerErrorException('Unknown get profile error');
+      }
+    }
+
+    return userProfileResponse;
   }
 }
