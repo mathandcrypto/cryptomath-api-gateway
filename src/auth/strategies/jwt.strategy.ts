@@ -9,6 +9,8 @@ import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
+import { AuthUserSerializerService } from '../serializers/auth-user.serializer';
+import { AuthUser } from '../interfaces/auth-user.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,6 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly jwtConfigService: JwtConfigService,
     private readonly authPackageService: AuthPackageService,
     private readonly userPackageService: UserPackageService,
+    private readonly authUserSerializerService: AuthUserSerializerService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -24,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate({ id, secret }: JwtPayload) {
+  async validate({ id, secret }: JwtPayload): Promise<AuthUser> {
     const [
       validateStatus,
       validateAuthSessionResponse,
@@ -63,6 +66,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User with this id does not exist');
     }
 
-    return { id: user.id, email: user.email };
+    return await this.authUserSerializerService.serialize(user);
   }
 }

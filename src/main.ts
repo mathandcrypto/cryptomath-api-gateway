@@ -4,8 +4,22 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
+function setupSwagger(app: INestApplication) {
+  const config = new DocumentBuilder()
+    .setTitle('CryptoMath API')
+    .setDescription('Public API for CryptoMath services')
+    .setVersion('0.0.1')
+    .addBasicAuth()
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -22,6 +36,8 @@ async function bootstrap() {
       disableErrorMessages: false,
     }),
   );
+
+  setupSwagger(app);
 
   const appConfigService = app.get(AppConfigService);
   const { port } = appConfigService;

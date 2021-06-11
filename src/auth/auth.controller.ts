@@ -6,7 +6,6 @@ import {
   HttpCode,
   InternalServerErrorException,
   Post,
-  Req,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -25,24 +24,38 @@ import { RefreshRequestDTO } from './dto/refresh-request.dto';
 import { RegisterRequestDTO } from './dto/register-request.dto';
 import { ResolveRefreshTokenError } from './enums/resolve-refresh-token-error.enum';
 import { CaptchaService } from '@models/captcha/captcha.service';
-import { UsersService } from '@models/users/users.service';
 import { ValidateAnswerError } from '@models/captcha/enums/validate-answer-error.enum';
 import { RegisterExceptionError } from './enums/register-exception-error.enum';
-import { GetUserProfileError } from '@models/users/enums/get-user-profile-error.enum';
+import { LoginResponseDTO } from './dto/login-response.dto';
+import { RegisterResponseDTO } from './dto/register-response.dto';
+import { UserExtraResponseDTO } from './dto/user-extra-response.dto';
+import { AuthUser } from './interfaces/auth-user.interface';
+import { GetAuthUser } from '@common/decorators/get-auth-user.decorator';
+import { GetUserExtraError } from './enums/get-user-extra-error.enum';
+import {
+  ApiBasicAuth,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
     private readonly captchaService: CaptchaService,
-    private readonly usersService: UsersService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   @HttpCode(200)
-  async login(@Body() { email, password }: LoginRequestDTO) {
+  @ApiOperation({ summary: 'Log in as a user' })
+  @ApiBasicAuth()
+  async login(
+    @Body() { email, password }: LoginRequestDTO,
+  ): Promise<LoginResponseDTO> {
     const [
       loginStatus,
       loginError,
@@ -91,7 +104,10 @@ export class AuthController {
 
   @Post('/refresh')
   @HttpCode(200)
-  async refresh(@Body() { refresh_token }: RefreshRequestDTO) {
+  @ApiOperation({ summary: 'Update a pair of jwt access tokens' })
+  async refresh(
+    @Body() { refresh_token }: RefreshRequestDTO,
+  ): Promise<LoginResponseDTO> {
     const [
       resolveStatus,
       resolveError,
@@ -169,8 +185,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('/logout')
   @HttpCode(200)
-  async logout(@Req() request) {
-    const userId = request.user.id;
+  @ApiOperation({ summary: 'Log out as a user' })
+  @ApiBearerAuth()
+  async logout(@GetAuthUser() user: AuthUser): Promise<void> {
+    const userId = user.id;
 
     const [logoutStatus, logoutError] = await this.authService.logout(userId);
 
@@ -189,8 +207,9 @@ export class AuthController {
   }
 
   @UseGuards(GuestGuard)
-  @Post('register')
+  @Post('/register')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Register a new user' })
   async register(
     @Body()
     {
@@ -200,7 +219,7 @@ export class AuthController {
       email,
       password,
     }: RegisterRequestDTO,
-  ) {
+  ): Promise<RegisterResponseDTO> {
     const [
       validateStatus,
       validateErrorType,
@@ -287,29 +306,35 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('user')
-  async getUser(@Req() request) {
-    const userId = request.user.id;
-
+  @Get('/user')
+  @ApiOperation({ summary: 'Get data of an authorized user' })
+  @ApiBearerAuth()
+  async getUser(@GetAuthUser() user: AuthUser): Promise<UserExtraResponseDTO> {
     const [
-      userProfileStatus,
-      userProfileError,
-      userProfileResponse,
-    ] = await this.usersService.getUserProfile(userId);
+      userExtraStatus,
+      userExtraError,
+      userExtraResponse,
+    ] = await this.authService.getUserExtra(user);
 
-    if (!userProfileStatus) {
-      switch (userProfileError) {
-        case GetUserProfileError.FindUserError:
-          throw new InternalServerErrorException('Failed to find user');
-        case GetUserProfileError.UserNotExists:
-          throw new UnauthorizedException('User does not exist');
-        case GetUserProfileError.FindAvatarError:
+    if (!userExtraStatus) {
+      switch (userExtraError) {
+        case GetUserExtraError.FindAvatarError:
           throw new InternalServerErrorException('Failed to find user avatar');
         default:
-          throw new InternalServerErrorException('Unknown get profile error');
+          throw new InternalServerErrorException(
+            'Unknown get extra user data error',
+          );
       }
     }
 
-    return userProfileResponse;
+    const { id, email, role, displayName, avatar } = userExtraResponse;
+
+    return {
+      id,
+      email,
+      role,
+      display_name: displayName,
+      avatar_url: avatar?.url,
+    };
   }
 }

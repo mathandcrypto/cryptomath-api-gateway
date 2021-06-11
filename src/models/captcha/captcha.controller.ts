@@ -7,7 +7,10 @@ import {
 import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-package-methods.service';
 import { GuestGuard } from '@auth/guards/guest.guard';
 import { CaptchaTokenService } from './captcha-token.service';
+import { CaptchaGenerateResponseDTO } from './dto/captcha-generate-response.dto';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('captcha')
 @Controller('captcha')
 @UseGuards(GuestGuard)
 export class CaptchaController {
@@ -17,7 +20,8 @@ export class CaptchaController {
   ) {}
 
   @Get('/generate')
-  async generateCaptcha() {
+  @ApiOperation({ summary: 'Generate new captcha task' })
+  async generateCaptcha(): Promise<CaptchaGenerateResponseDTO> {
     const [
       generateStatus,
       generateResponse,

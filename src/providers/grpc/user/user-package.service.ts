@@ -4,6 +4,7 @@ import {
   FindByEmailAndPasswordResponse,
   FindOneResponse,
   FindAvatarResponse,
+  FindProfileResponse,
   USER_PACKAGE_NAME,
   USER_SERVICE_NAME,
   UserServiceClient,
@@ -84,6 +85,18 @@ export class UserPackageService implements OnModuleInit {
   async findAvatar(userId: number): Promise<[boolean, FindAvatarResponse]> {
     try {
       const response = await this.client.findAvatar({ userId }).toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async findProfile(userId: number): Promise<[boolean, FindProfileResponse]> {
+    try {
+      const response = await this.client.findProfile({ userId }).toPromise();
 
       return [true, response];
     } catch (error) {

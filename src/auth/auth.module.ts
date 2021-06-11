@@ -7,12 +7,13 @@ import { UserPackageModule } from '@providers/grpc/user/user-package.module';
 import { AuthPackageModule } from '@providers/grpc/auth/auth-package.module';
 import { MailerModule } from '@providers/rmq/mailer/mailer.module';
 import { UsersModule } from '@models/users/users.module';
-import { UsersService } from '@models/users/users.service';
 import { CaptchaModule } from '@models/captcha/captcha.module';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RoleSerializerService } from './serializers/role.serializer';
+import { AuthUserSerializerService } from './serializers/auth-user.serializer';
 import { AuthController } from './auth.controller';
 
 @Module({
@@ -46,10 +47,11 @@ import { AuthController } from './auth.controller';
   ],
   providers: [
     AuthService,
-    UsersService,
     TokenService,
     LocalStrategy,
     JwtStrategy,
+    RoleSerializerService,
+    AuthUserSerializerService,
   ],
   controllers: [AuthController],
 })

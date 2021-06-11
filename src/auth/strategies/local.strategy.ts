@@ -6,23 +6,23 @@ import {
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
+import { AuthUserSerializerService } from '../serializers/auth-user.serializer';
+import { AuthUser } from '../interfaces/auth-user.interface';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly userPackageService: UserPackageService,
+    private readonly authUserSerializerService: AuthUserSerializerService,
   ) {
     super({ usernameField: 'email' });
   }
 
-  async validate(email: string, password: string) {
+  async validate(email: string, password: string): Promise<AuthUser> {
     const [
       validateStatus,
       validateUserResponse,
-    ] = await this.userPackageService.findByEmailAndPassword(
-      email,
-      password,
-    );
+    ] = await this.userPackageService.findByEmailAndPassword(email, password);
 
     if (!validateStatus) {
       throw new InternalServerErrorException(
@@ -38,6 +38,6 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid user password');
     }
 
-    return { id: user.id, email: user.email };
+    return await this.authUserSerializerService.serialize(user);
   }
 }

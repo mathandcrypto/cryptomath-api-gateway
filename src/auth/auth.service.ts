@@ -9,6 +9,9 @@ import { RegisterError } from './enums/register-error.enum';
 import { LoginResponse } from './interfaces/login-response.interface';
 import { RefreshResponse } from './interfaces/refresh-response.interface';
 import { RegisterResponse } from './interfaces/register-response.interface';
+import { AuthUser } from './interfaces/auth-user.interface';
+import { AuthUserExtra } from './interfaces/auth-user-extra.interface';
+import { GetUserExtraError } from './enums/get-user-extra-error.enum';
 
 @Injectable()
 export class AuthService {
@@ -168,5 +171,22 @@ export class AuthService {
     }
 
     return [true, null, { userId: id }];
+  }
+
+  async getUserExtra(
+    user: AuthUser,
+  ): Promise<[boolean, GetUserExtraError, AuthUserExtra]> {
+    const [
+      findAvatarStatus,
+      findAvatarResponse,
+    ] = await this.userPackageService.findAvatar(user.id);
+
+    if (!findAvatarStatus) {
+      return [false, GetUserExtraError.FindAvatarError, null];
+    }
+
+    const { isAvatarExists, avatar } = findAvatarResponse;
+
+    return [true, null, { ...user, avatar: isAvatarExists ? avatar : null }];
   }
 }
