@@ -28,7 +28,7 @@ import { ValidateAnswerError } from '@models/captcha/enums/validate-answer-error
 import { RegisterExceptionError } from './enums/register-exception-error.enum';
 import { LoginResponseDTO } from './dto/login-response.dto';
 import { RegisterResponseDTO } from './dto/register-response.dto';
-import { UserExtraResponseDTO } from './dto/user-extra-response.dto';
+import { AuthUserResponseDTO } from './dto/auth-user-response.dto';
 import { AuthUser } from './interfaces/auth-user.interface';
 import { GetAuthUser } from '@common/decorators/get-auth-user.decorator';
 import { GetUserExtraError } from './enums/get-user-extra-error.enum';
@@ -36,6 +36,7 @@ import {
   ApiBasicAuth,
   ApiBearerAuth,
   ApiOperation,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -308,8 +309,13 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/user')
   @ApiOperation({ summary: 'Get data of an authorized user' })
+  @ApiResponse({
+    status: 200,
+    type: AuthUserResponseDTO,
+    description: 'Authorized user data',
+  })
   @ApiBearerAuth()
-  async getUser(@GetAuthUser() user: AuthUser): Promise<UserExtraResponseDTO> {
+  async getUser(@GetAuthUser() user: AuthUser): Promise<AuthUserResponseDTO> {
     const [
       userExtraStatus,
       userExtraError,

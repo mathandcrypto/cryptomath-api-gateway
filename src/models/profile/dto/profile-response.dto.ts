@@ -1,8 +1,8 @@
 import { IsOptional, IsString, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserExtraResponseDTO } from '@auth/dto/user-extra-response.dto';
+import { AuthUserResponseDTO } from '@auth/dto/auth-user-response.dto';
 
-export class ProfileResponseDTO extends UserExtraResponseDTO {
+export class ProfileResponseDTO extends AuthUserResponseDTO {
   @ApiProperty()
   @IsOptional()
   @IsString()

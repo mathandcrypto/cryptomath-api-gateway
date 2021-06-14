@@ -7,6 +7,7 @@ import {
 import { ValidationPipe, Logger, INestApplication } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import fmp from 'fastify-multipart';
 
 function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
@@ -22,9 +23,22 @@ function setupSwagger(app: INestApplication) {
 }
 
 async function bootstrap() {
+  const fastifyAdapter = new FastifyAdapter({ logger: true });
+
+  fastifyAdapter.register(fmp, {
+    limits: {
+      fieldNameSize: 100,
+      fieldSize: 100,
+      fields: 10,
+      fileSize: 1000000,
+      files: 1,
+      headerPairs: 2000,
+    },
+  });
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    fastifyAdapter,
   );
   const logger = new Logger('bootstrap');
 

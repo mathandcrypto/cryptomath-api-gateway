@@ -9,7 +9,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@common/enums/role.enum';
 
-export class UserExtraResponseDTO {
+export class AuthUserResponseDTO {
   @ApiProperty()
   @IsInt()
   id: number;
