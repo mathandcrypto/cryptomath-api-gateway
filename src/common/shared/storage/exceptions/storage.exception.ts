@@ -1,4 +1,4 @@
-import { StorageError } from '../enums/storage-error.enum';
+import { StorageError } from '../enums/errors/storage.enum';
 
 export class StorageException extends Error {
   private readonly code: StorageError;

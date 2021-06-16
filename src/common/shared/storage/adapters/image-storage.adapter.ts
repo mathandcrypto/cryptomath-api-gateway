@@ -1,11 +1,12 @@
 import { StorageAbstract } from '../storage.abstract';
-import * as fs from 'fs';
+import { createWriteStream, createReadStream } from 'fs';
+import { tmpdir } from 'os';
 import * as sharp from 'sharp';
 import { ResizeOptions } from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import { join } from 'path';
 import { StorageException } from '../exceptions/storage.exception';
-import { StorageError } from '../enums/storage-error.enum';
+import { StorageError } from '../enums/errors/storage.enum';
 
 export class ImageStorage extends StorageAbstract {
   protected options: ResizeOptions;
@@ -27,9 +28,9 @@ export class ImageStorage extends StorageAbstract {
   }
 
   protected async resize(filePath: string): Promise<string> {
-    const tmpFilePath = join('/tmp', `resized_${uuidv4()}`);
-    const readStream = fs.createReadStream(filePath);
-    const writeStream = fs.createWriteStream(tmpFilePath);
+    const tmpFilePath = join(tmpdir(), `resized_${uuidv4()}`);
+    const readStream = createReadStream(filePath);
+    const writeStream = createWriteStream(tmpFilePath);
     const sharpPipe = sharp().resize(this.options);
 
     return new Promise<string>((resolve, reject) => {
@@ -51,6 +52,6 @@ export class ImageStorage extends StorageAbstract {
 
     this.reset();
 
-    return fs.createReadStream(resizedFilePath);
+    return createReadStream(resizedFilePath);
   }
 }

@@ -5,8 +5,8 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenExpiredError } from 'jsonwebtoken';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { ResolveRefreshTokenResponse } from './interfaces/resolve-refresh-token-response.interface';
-import { ResolveRefreshTokenError } from './enums/resolve-refresh-token-error.enum';
-import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token-error.enum';
+import { ResolveRefreshTokenError } from './enums/errors/resolve-refresh-token.enum';
+import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 
 @Injectable()
 export class TokenService {

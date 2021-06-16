@@ -11,6 +11,7 @@ import {
 import { Observable } from 'rxjs';
 import { Multipart } from 'fastify-multipart';
 import BusboyConfig = busboy.BusboyConfig;
+import { FastifyFileInterceptorException } from '../constants/exceptions/fastify-file-interceptor.exception';
 
 export function FastifyFileInterceptor(
   fieldName: string,
@@ -21,17 +22,29 @@ export function FastifyFileInterceptor(
       if (error.code) {
         switch (error.code) {
           case 'FST_PARTS_LIMIT':
-            return new PayloadTooLargeException('Reached parts limit');
+            return new PayloadTooLargeException(
+              FastifyFileInterceptorException.ReachedPartsLimit,
+            );
           case 'FST_FILES_LIMIT':
-            return new PayloadTooLargeException('Reached files limit');
+            return new PayloadTooLargeException(
+              FastifyFileInterceptorException.ReachedFilesLimit,
+            );
           case 'FST_FIELDS_LIMIT':
-            return new PayloadTooLargeException('Reached fields limit');
+            return new PayloadTooLargeException(
+              FastifyFileInterceptorException.ReachedFieldsLimit,
+            );
           case 'FST_REQ_FILE_TOO_LARGE':
-            return new PayloadTooLargeException('File too large');
+            return new PayloadTooLargeException(
+              FastifyFileInterceptorException.FileTooLarge,
+            );
           case 'FST_PROTO_VIOLATION':
-            return new BadRequestException('Invalid field name');
+            return new BadRequestException(
+              FastifyFileInterceptorException.InvalidFieldName,
+            );
           case 'FST_INVALID_MULTIPART_CONTENT_TYPE':
-            return new NotAcceptableException('Request is not multipart');
+            return new NotAcceptableException(
+              FastifyFileInterceptorException.NotMultipartRequest,
+            );
         }
       }
 
@@ -40,7 +53,9 @@ export function FastifyFileInterceptor(
 
     checkMultipart(multipart: Multipart) {
       if (multipart.fieldname !== fieldName) {
-        throw new BadRequestException('Invalid field name');
+        throw new BadRequestException(
+          FastifyFileInterceptorException.InvalidFieldName,
+        );
       }
     }
 
@@ -51,7 +66,9 @@ export function FastifyFileInterceptor(
       const req = context.switchToHttp().getRequest();
 
       if (!req.isMultipart()) {
-        throw new NotAcceptableException('Request is not multipart');
+        throw new NotAcceptableException(
+          FastifyFileInterceptorException.NotMultipartRequest,
+        );
       }
 
       try {

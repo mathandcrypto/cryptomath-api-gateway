@@ -24,4 +24,8 @@ export class AWSConfigService {
   get tmpObjectsPrefix(): string {
     return this.configService.get<string>('aws.tmpObjectsPrefix');
   }
+
+  getUrlFromBucket(bucketName: string, fileName: string): string {
+    return `https://${bucketName}.s3.${this.region}.amazonaws.com/${fileName}`;
+  }
 }

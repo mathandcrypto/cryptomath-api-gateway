@@ -4,6 +4,8 @@ import {
   FindByEmailAndPasswordResponse,
   FindOneResponse,
   FindAvatarResponse,
+  DeleteAvatarResponse,
+  CreateAvatarResponse,
   FindProfileResponse,
   USER_PACKAGE_NAME,
   USER_SERVICE_NAME,
@@ -85,6 +87,41 @@ export class UserPackageService implements OnModuleInit {
   async findAvatar(userId: number): Promise<[boolean, FindAvatarResponse]> {
     try {
       const response = await this.client.findAvatar({ userId }).toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async deleteAvatar(
+    userId: number,
+    avatarId: number,
+  ): Promise<[boolean, DeleteAvatarResponse]> {
+    try {
+      const response = await this.client
+        .deleteAvatar({ userId, avatarId })
+        .toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async createAvatar(
+    userId: number,
+    key: string,
+    url: string,
+  ): Promise<[boolean, CreateAvatarResponse]> {
+    try {
+      const response = await this.client
+        .createAvatar({ userId, key, url })
+        .toPromise();
 
       return [true, response];
     } catch (error) {

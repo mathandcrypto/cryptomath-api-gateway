@@ -1,18 +1,23 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
 import { AuthUser } from '@auth/interfaces/auth-user.interface';
-import { GetAuthUserProfileError } from './enums/get-auth-user-profile-error.enum';
+import { GetAuthUserProfileError } from './enums/errors/get-auth-user-profile.enum';
 import { AuthUserProfile } from './interfaces/auth-user-profile.interface';
-import { GetUserProfileError } from './enums/get-user-profile-error.enum';
+import { GetUserProfileError } from './enums/errors/get-user-profile.enum';
 import { UserProfile } from './interfaces/user-profile.interface';
 import { InjectS3, S3 } from 'nestjs-s3';
 import { Multipart } from 'fastify-multipart';
+import { UploadAvatarError } from './enums/errors/upload-avatar.enum';
+import { SaveAvatarError } from './enums/errors/save-avatar.enum';
+import { CreateUserAvatarError } from './enums/errors/create-user-avatar.enum';
+import { DeleteUserAvatarError } from './enums/errors/delete-user-avatar.enum';
+import { Avatar } from 'cryptomath-api-proto/types/user';
 import { ImageStorage } from '@common/shared/storage/adapters/image-storage.adapter';
-import { UploadUserAvatarError } from '@models/profile/enums/upload-user-avatar-error.enum';
 import { StorageException } from '@common/shared/storage/exceptions/storage.exception';
-import { ManagedUpload } from 'aws-sdk/lib/s3/managed_upload';
 import { AWSConfigService } from '@config/aws/config.service';
+import { AWSObject } from '@common/interfaces/aws-object.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { extname } from 'path';
 
 @Injectable()
 export class ProfileService {
@@ -110,13 +115,13 @@ export class ProfileService {
     ];
   }
 
-  async uploadUserAvatar(
+  async uploadAvatar(
     multipart: Multipart,
-  ): Promise<[boolean, UploadUserAvatarError, ManagedUpload.SendData]> {
+  ): Promise<[boolean, UploadAvatarError, AWSObject]> {
     this.imageStorage.setMultipart(multipart);
 
     if (!this.imageStorage.isImageFile) {
-      return [false, UploadUserAvatarError.InvalidImageFile, null];
+      return [false, UploadAvatarError.InvalidImageFile, null];
     }
 
     this.imageStorage.setOptions({ width: 200, height: 200 });
@@ -125,7 +130,7 @@ export class ProfileService {
       const fileStream = await this.imageStorage.getStream();
 
       fileStream.on('error', () => {
-        return [false, UploadUserAvatarError.ReadResizedFileError, null];
+        return [false, UploadAvatarError.ReadResizedFileError, null];
       });
 
       const awsKey = `${this.awsConfigService.tmpObjectsPrefix}_${uuidv4()}${
@@ -136,18 +141,165 @@ export class ProfileService {
           Bucket: this.awsConfigService.userAssetsBucketName,
           Body: fileStream,
           Key: awsKey,
+          ACL: 'public-read',
         })
         .promise();
 
-      return [true, null, uploadResult];
+      return [
+        true,
+        null,
+        {
+          bucket: uploadResult.Bucket,
+          key: uploadResult.Key,
+          url: uploadResult.Location,
+        },
+      ];
     } catch (error) {
       this.logger.error(error);
 
       if (error instanceof StorageException) {
-        return [false, UploadUserAvatarError.ResizeFileError, null];
+        return [false, UploadAvatarError.ResizeFileError, null];
       }
 
-      return [false, UploadUserAvatarError.UploadToAWSError, null];
+      return [false, UploadAvatarError.UploadToAWSError, null];
     }
+  }
+
+  async saveAvatar(
+    tmpKey: string,
+  ): Promise<[boolean, SaveAvatarError, AWSObject]> {
+    if (!tmpKey.startsWith(this.awsConfigService.tmpObjectsPrefix)) {
+      return [false, SaveAvatarError.InvalidObjectKey, null];
+    }
+
+    const { userAssetsBucketName } = this.awsConfigService;
+
+    try {
+      await this.s3
+        .headObject({
+          Bucket: userAssetsBucketName,
+          Key: tmpKey,
+        })
+        .promise();
+
+      const newAwsKey = `${uuidv4()}${extname(tmpKey)}`;
+      await this.s3
+        .copyObject({
+          Bucket: userAssetsBucketName,
+          CopySource: `${userAssetsBucketName}/${tmpKey}`,
+          Key: newAwsKey,
+          ACL: 'public-read',
+        })
+        .promise();
+
+      await this.s3
+        .deleteObject({
+          Bucket: userAssetsBucketName,
+          Key: tmpKey,
+        })
+        .promise();
+
+      return [
+        true,
+        null,
+        {
+          bucket: userAssetsBucketName,
+          key: newAwsKey,
+          url: this.awsConfigService.getUrlFromBucket(
+            userAssetsBucketName,
+            newAwsKey,
+          ),
+        },
+      ];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, SaveAvatarError.SaveToAWSError, null];
+    }
+  }
+
+  async deleteUserAvatar(
+    userId: number,
+    avatarId: number,
+  ): Promise<[boolean, DeleteUserAvatarError, Avatar]> {
+    const [
+      deleteAvatarStatus,
+      deleteAvatarResponse,
+    ] = await this.userPackageService.deleteAvatar(userId, avatarId);
+
+    if (!deleteAvatarStatus) {
+      return [false, DeleteUserAvatarError.ErrorDeletingAvatar, null];
+    }
+
+    const { isAvatarDeleted, avatar } = deleteAvatarResponse;
+
+    if (!isAvatarDeleted) {
+      return [false, DeleteUserAvatarError.AvatarNotDeleted, null];
+    }
+
+    try {
+      await this.s3.deleteObject({
+        Bucket: this.awsConfigService.userAssetsBucketName,
+        Key: avatar.key,
+      });
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, DeleteUserAvatarError.ErrorRemovingOldAvatarFromAWS, null];
+    }
+
+    return [true, null, avatar];
+  }
+
+  async createUserAvatar(
+    userId: number,
+    awsObject: AWSObject,
+  ): Promise<[boolean, CreateUserAvatarError, Avatar]> {
+    const [
+      findAvatarStatus,
+      findAvatarResponse,
+    ] = await this.userPackageService.findAvatar(userId);
+
+    if (!findAvatarStatus) {
+      return [false, CreateUserAvatarError.FindAvatarError, null];
+    }
+
+    const { isAvatarExists, avatar } = findAvatarResponse;
+
+    if (isAvatarExists) {
+      const [deleteAvatarStatus] = await this.deleteUserAvatar(
+        userId,
+        avatar.id,
+      );
+
+      if (!deleteAvatarStatus) {
+        return [false, CreateUserAvatarError.ErrorDeletingOldAvatar, null];
+      }
+    }
+
+    const { key, url } = awsObject;
+
+    const [
+      createAvatarStatus,
+      createAvatarResponse,
+    ] = await this.userPackageService.createAvatar(userId, key, url);
+
+    if (!createAvatarStatus) {
+      return [false, CreateUserAvatarError.CreateAvatarError, null];
+    }
+
+    const {
+      isAvatarCreated,
+      isAvatarAlreadyExists,
+      avatar: createdAvatar,
+    } = createAvatarResponse;
+
+    if (isAvatarAlreadyExists) {
+      return [false, CreateUserAvatarError.AvatarAlreadyExists, null];
+    } else if (!isAvatarCreated) {
+      return [false, CreateUserAvatarError.AvatarNotCreated, null];
+    }
+
+    return [true, null, createdAvatar];
   }
 }

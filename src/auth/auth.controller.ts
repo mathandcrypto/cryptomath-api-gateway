@@ -10,28 +10,34 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginError } from './enums/login-error.enum';
-import { RefreshError } from './enums/refresh-error.enum';
-import { LogoutError } from './enums/logout-error.enum';
-import { RegisterError } from './enums/register-error.enum';
+import { LoginError } from './enums/errors/login.enum';
+import { LoginException } from './constants/exceptions/login.exception';
+import { RefreshError } from './enums/errors/refresh.enum';
+import { RefreshException } from './constants/exceptions/refresh.exception';
+import { LogoutError } from './enums/errors/logout.enum';
+import { LogoutException } from './constants/exceptions/logout.exception';
+import { RegisterError } from './enums/errors/register.enum';
+import { RegisterException } from './constants/exceptions/register.exception';
 import { TokenService } from './token.service';
-import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token-error.enum';
+import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GuestGuard } from './guards/guest.guard';
 import { LoginRequestDTO } from './dto/login-request.dto';
 import { RefreshRequestDTO } from './dto/refresh-request.dto';
 import { RegisterRequestDTO } from './dto/register-request.dto';
-import { ResolveRefreshTokenError } from './enums/resolve-refresh-token-error.enum';
+import { ResolveRefreshTokenError } from './enums/errors/resolve-refresh-token.enum';
 import { CaptchaService } from '@models/captcha/captcha.service';
-import { ValidateAnswerError } from '@models/captcha/enums/validate-answer-error.enum';
-import { RegisterExceptionError } from './enums/register-exception-error.enum';
+import { ValidateAnswerError } from '@models/captcha/enums/errors/validate-answer.enum';
 import { LoginResponseDTO } from './dto/login-response.dto';
 import { RegisterResponseDTO } from './dto/register-response.dto';
 import { AuthUserResponseDTO } from './dto/auth-user-response.dto';
 import { AuthUser } from './interfaces/auth-user.interface';
 import { GetAuthUser } from '@common/decorators/get-auth-user.decorator';
-import { GetUserExtraError } from './enums/get-user-extra-error.enum';
+import { GetUserExtraError } from './enums/errors/get-user-extra.enum';
+import { AuthUserException } from './constants/exceptions/auth-user.exception';
+import { GetClientIP } from '@common/decorators/get-client-ip.decorator';
+import { GetClientUserAgent } from '@common/decorators/get-client-user-agent.decorator';
 import {
   ApiBasicAuth,
   ApiBearerAuth,
@@ -56,31 +62,39 @@ export class AuthController {
   @ApiBasicAuth()
   async login(
     @Body() { email, password }: LoginRequestDTO,
+    @GetClientIP() ip: string,
+    @GetClientUserAgent() userAgent: string,
   ): Promise<LoginResponseDTO> {
     const [
       loginStatus,
       loginError,
       loginResponse,
-    ] = await this.authService.login(email, password);
+    ] = await this.authService.login(email, password, ip, userAgent);
 
     if (!loginStatus) {
       switch (loginError) {
         case LoginError.FindUserError:
-          throw new InternalServerErrorException('Failed to find user');
+          throw new InternalServerErrorException(LoginException.FindUserError);
         case LoginError.UserNotExists:
-          throw new UnauthorizedException('User with this email was not found');
+          throw new UnauthorizedException(LoginException.UserNotExists);
         case LoginError.InvalidPassword:
-          throw new UnauthorizedException('Invalid user password');
+          throw new UnauthorizedException(LoginException.InvalidPassword);
         case LoginError.CreateAccessSessionError:
           throw new InternalServerErrorException(
-            'Failed to create access session',
+            LoginException.CreateAccessSessionError,
           );
         case LoginError.AccessSessionNotCreated:
-          throw new InternalServerErrorException('Access session not created');
+          throw new InternalServerErrorException(
+            LoginException.AccessSessionNotCreated,
+          );
         case LoginError.RefreshSessionNotCreated:
-          throw new InternalServerErrorException('Refresh session not created');
+          throw new InternalServerErrorException(
+            LoginException.RefreshSessionNotCreated,
+          );
         default:
-          throw new InternalServerErrorException('Authorization error');
+          throw new InternalServerErrorException(
+            LoginException.LoginUnknownError,
+          );
       }
     }
 
@@ -108,6 +122,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Update a pair of jwt access tokens' })
   async refresh(
     @Body() { refresh_token }: RefreshRequestDTO,
+    @GetClientIP() ip: string,
+    @GetClientUserAgent() userAgent: string,
   ): Promise<LoginResponseDTO> {
     const [
       resolveStatus,
@@ -118,18 +134,26 @@ export class AuthController {
     if (!resolveStatus) {
       switch (resolveError) {
         case DecodeJwtTokenError.TokenExpired:
-          throw new UnauthorizedException('Refresh token expired');
+          throw new UnauthorizedException(RefreshException.RefreshTokenExpired);
         case DecodeJwtTokenError.TokenMalformed:
-          throw new UnauthorizedException('Refresh token malformed');
+          throw new UnauthorizedException(
+            RefreshException.RefreshTokenMalformed,
+          );
         case ResolveRefreshTokenError.ValidateRefreshSessionError:
-          throw new UnauthorizedException('Failed to validate refresh session');
+          throw new UnauthorizedException(
+            RefreshException.ValidateRefreshSessionError,
+          );
         case ResolveRefreshTokenError.RefreshSessionNotExists:
-          throw new UnauthorizedException('Refresh session does not exist');
+          throw new UnauthorizedException(
+            RefreshException.RefreshSessionNotExists,
+          );
         case ResolveRefreshTokenError.RefreshSessionExpired:
-          throw new UnauthorizedException('Refresh session expired');
+          throw new UnauthorizedException(
+            RefreshException.RefreshSessionExpired,
+          );
         default:
           throw new InternalServerErrorException(
-            'Failed to resolve refresh token',
+            RefreshException.ResolveRefreshTokenUnknownError,
           );
       }
     }
@@ -139,27 +163,33 @@ export class AuthController {
       refreshStatus,
       refreshError,
       refreshResponse,
-    ] = await this.authService.refresh(userId, refreshSecret);
+    ] = await this.authService.refresh(userId, refreshSecret, ip, userAgent);
 
     if (!refreshStatus) {
       switch (refreshError) {
         case RefreshError.DeleteRefreshSessionError:
           throw new InternalServerErrorException(
-            'Failed to delete refresh session',
+            RefreshException.DeleteRefreshSessionError,
           );
         case RefreshError.RefreshSessionNotDeleted:
-          throw new InternalServerErrorException('Refresh session not deleted');
+          throw new InternalServerErrorException(
+            RefreshException.RefreshSessionNotDeleted,
+          );
         case RefreshError.CreateAccessSessionError:
           throw new InternalServerErrorException(
-            'Failed to create access session',
+            RefreshException.CreateAccessSessionError,
           );
         case RefreshError.AccessSessionNotCreated:
-          throw new InternalServerErrorException('Access session not created');
+          throw new InternalServerErrorException(
+            RefreshException.AccessSessionNotCreated,
+          );
         case RefreshError.RefreshSessionNotCreated:
-          throw new InternalServerErrorException('Refresh session not created');
+          throw new InternalServerErrorException(
+            RefreshException.RefreshSessionNotCreated,
+          );
         default:
           throw new InternalServerErrorException(
-            'Failed to refresh auth sessions',
+            RefreshException.RefreshSessionUnknownError,
           );
       }
     }
@@ -197,12 +227,16 @@ export class AuthController {
       switch (logoutError) {
         case LogoutError.DeleteAllUserSessionsError:
           throw new InternalServerErrorException(
-            'Failed to delete all user sessions',
+            LogoutException.DeleteAllUserSessionsError,
           );
         case LogoutError.SessionsNotDeleted:
-          throw new InternalServerErrorException('User sessions not deleted');
+          throw new InternalServerErrorException(
+            LogoutException.SessionsNotDeleted,
+          );
         default:
-          throw new InternalServerErrorException('Unknown logout error');
+          throw new InternalServerErrorException(
+            LogoutException.UnknownLogoutError,
+          );
       }
     }
   }
@@ -230,36 +264,22 @@ export class AuthController {
     if (!validateStatus) {
       switch (validateErrorType) {
         case DecodeJwtTokenError.TokenExpired:
-          throw new ForbiddenException({
-            error: RegisterExceptionError.CaptchaTokenExpired,
-            message: 'Captcha token expired',
-          });
+          throw new ForbiddenException(RegisterException.CaptchaTokenExpired);
         case DecodeJwtTokenError.TokenMalformed:
-          throw new ForbiddenException({
-            error: RegisterExceptionError.CaptchaTokenMalformed,
-            message: 'Captcha token malformed',
-          });
+          throw new ForbiddenException(RegisterException.CaptchaTokenMalformed);
         case ValidateAnswerError.ValidateTaskError:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.CaptchaValidateTaskError,
-            message: 'Failed to validate captcha answer',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.CaptchaValidateTaskError,
+          );
         case ValidateAnswerError.TaskNotFound:
-          throw new ForbiddenException({
-            error: RegisterExceptionError.CaptchaTaskNotFound,
-            message: 'Captcha task not found',
-          });
+          throw new ForbiddenException(RegisterException.CaptchaTaskNotFound);
         default:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.CaptchaUnknownError,
-            message: 'Unknown captcha validation error',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.CaptchaUnknownError,
+          );
       }
     } else if (!isAnswerCorrect) {
-      throw new ForbiddenException({
-        error: RegisterExceptionError.WrongCaptchaAnswer,
-        message: 'Wrong answer to captcha task',
-      });
+      throw new ForbiddenException(RegisterException.WrongCaptchaAnswer);
     }
 
     const [
@@ -271,30 +291,23 @@ export class AuthController {
     if (!registerStatus) {
       switch (registerError) {
         case RegisterError.CreateUserError:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.CreateUserError,
-            message: 'Failed to create user',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.CreateUserError,
+          );
         case RegisterError.UserNotCreated:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.UserNotCreated,
-            message: 'User not created',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.UserNotCreated,
+          );
         case RegisterError.UserAlreadyExists:
-          throw new ForbiddenException({
-            error: RegisterExceptionError.UserAlreadyExists,
-            message: 'A user with this email already exists',
-          });
+          throw new ForbiddenException(RegisterException.UserAlreadyExists);
         case RegisterError.SentNotifyMailError:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.SentNotifyMailError,
-            message: 'Failed to sent registration notify mail',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.SentNotifyMailError,
+          );
         default:
-          throw new InternalServerErrorException({
-            error: RegisterExceptionError.CreateUserUnknownError,
-            message: 'Unknown user creation error',
-          });
+          throw new InternalServerErrorException(
+            RegisterException.CreateUserUnknownError,
+          );
       }
     }
 
@@ -325,10 +338,12 @@ export class AuthController {
     if (!userExtraStatus) {
       switch (userExtraError) {
         case GetUserExtraError.FindAvatarError:
-          throw new InternalServerErrorException('Failed to find user avatar');
+          throw new InternalServerErrorException(
+            AuthUserException.FindAvatarError,
+          );
         default:
           throw new InternalServerErrorException(
-            'Unknown get extra user data error',
+            AuthUserException.UnknownError,
           );
       }
     }
@@ -340,7 +355,12 @@ export class AuthController {
       email,
       role,
       display_name: displayName,
-      avatar_url: avatar?.url,
+      avatar: avatar
+        ? {
+            id: avatar.id,
+            url: avatar.url,
+          }
+        : null,
     };
   }
 }

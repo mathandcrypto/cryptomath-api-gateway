@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { CaptchaTokenService } from './captcha-token.service';
 import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-package-methods.service';
-import { ValidateAnswerError } from './enums/validate-answer-error.enum';
-import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token-error.enum';
+import { ValidateAnswerError } from './enums/errors/validate-answer.enum';
+import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 
 @Injectable()
 export class CaptchaService {

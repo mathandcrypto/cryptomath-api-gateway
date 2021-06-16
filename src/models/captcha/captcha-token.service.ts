@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { TaskPayload } from 'cryptomath-api-proto/types/captcha';
 import { CaptchaConfigService } from '@config/captcha/config.service';
-import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token-error.enum';
+import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 import { TokenExpiredError } from 'jsonwebtoken';
 
 @Injectable()

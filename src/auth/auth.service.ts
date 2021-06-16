@@ -2,16 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { MailerService } from '@providers/rmq/mailer/mailer.service';
-import { LoginError } from './enums/login-error.enum';
-import { LogoutError } from './enums/logout-error.enum';
-import { RefreshError } from './enums/refresh-error.enum';
-import { RegisterError } from './enums/register-error.enum';
+import { LoginError } from './enums/errors/login.enum';
+import { LogoutError } from './enums/errors/logout.enum';
+import { RefreshError } from './enums/errors/refresh.enum';
+import { RegisterError } from './enums/errors/register.enum';
 import { LoginResponse } from './interfaces/login-response.interface';
 import { RefreshResponse } from './interfaces/refresh-response.interface';
 import { RegisterResponse } from './interfaces/register-response.interface';
 import { AuthUser } from './interfaces/auth-user.interface';
 import { AuthUserExtra } from './interfaces/auth-user-extra.interface';
-import { GetUserExtraError } from './enums/get-user-extra-error.enum';
+import { GetUserExtraError } from './enums/errors/get-user-extra.enum';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +24,8 @@ export class AuthService {
   async login(
     email: string,
     password: string,
+    ip: string,
+    userAgent: string,
   ): Promise<[boolean, LoginError, LoginResponse]> {
     const [
       validateStatus,
@@ -47,7 +49,11 @@ export class AuthService {
     const [
       createSessionStatus,
       createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(userId);
+    ] = await this.authPackageService.createAccessSession(
+      userId,
+      ip,
+      userAgent,
+    );
 
     if (!createSessionStatus) {
       return [false, LoginError.CreateAccessSessionError, null];
@@ -91,6 +97,8 @@ export class AuthService {
   async refresh(
     userId: number,
     refreshSecret: string,
+    ip: string,
+    userAgent: string,
   ): Promise<[boolean, RefreshError, RefreshResponse]> {
     const [
       deleteSessionStatus,
@@ -113,7 +121,11 @@ export class AuthService {
     const [
       createSessionStatus,
       createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(userId);
+    ] = await this.authPackageService.createAccessSession(
+      userId,
+      ip,
+      userAgent,
+    );
 
     if (!createSessionStatus) {
       return [false, RefreshError.CreateAccessSessionError, null];

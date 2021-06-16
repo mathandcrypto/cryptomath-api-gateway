@@ -8,7 +8,8 @@ import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-pa
 import { GuestGuard } from '@auth/guards/guest.guard';
 import { CaptchaTokenService } from './captcha-token.service';
 import { CaptchaGenerateResponseDTO } from './dto/captcha-generate-response.dto';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { GenerateCaptchaException } from './constants/exceptions/generate-captcha.exception';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @ApiTags('captcha')
 @Controller('captcha')
@@ -21,6 +22,11 @@ export class CaptchaController {
 
   @Get('/generate')
   @ApiOperation({ summary: 'Generate new captcha task' })
+  @ApiResponse({
+    status: 200,
+    type: CaptchaGenerateResponseDTO,
+    description: 'Generated captcha task data',
+  })
   async generateCaptcha(): Promise<CaptchaGenerateResponseDTO> {
     const [
       generateStatus,
@@ -28,13 +34,17 @@ export class CaptchaController {
     ] = await this.captchaPackageMethodsService.generateTask();
 
     if (!generateStatus) {
-      throw new InternalServerErrorException('Failed to generate captcha task');
+      throw new InternalServerErrorException(
+        GenerateCaptchaException.GenerateTaskError,
+      );
     }
 
     const { isTaskGenerated, taskPayload, math } = generateResponse;
 
     if (!isTaskGenerated) {
-      throw new InternalServerErrorException('Captcha task not generated');
+      throw new InternalServerErrorException(
+        GenerateCaptchaException.TaskNotGenerated,
+      );
     }
 
     const token = await this.captchaTokenService.generateCaptchaToken(

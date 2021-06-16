@@ -1,19 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { BaseSerializerService } from '@common/serializers/base.serializer';
-import { ManagedUpload } from 'aws-sdk/lib/s3/managed_upload';
 import { UploadAvatarResponseDTO } from '../dto/upload-avatar-response.dto';
+import { AWSObject } from '@common/interfaces/aws-object.interface';
 
 @Injectable()
-export class UploadAvatarSerializer extends BaseSerializerService<
-  ManagedUpload.SendData,
+export class UploadAvatarSerializerService extends BaseSerializerService<
+  AWSObject,
   UploadAvatarResponseDTO
 > {
-  async serialize(
-    uploadResult: ManagedUpload.SendData,
-  ): Promise<UploadAvatarResponseDTO> {
+  async serialize(awsObject: AWSObject): Promise<UploadAvatarResponseDTO> {
     return {
-      key: uploadResult.Key,
-      url: uploadResult.Location,
+      key: awsObject.key,
+      url: awsObject.url,
     };
   }
 }

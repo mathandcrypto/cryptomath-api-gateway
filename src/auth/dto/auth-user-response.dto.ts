@@ -6,8 +6,10 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@common/enums/role.enum';
+import { AvatarResponseDTO } from '@models/profile/dto/avatar-response.dto';
 
 export class AuthUserResponseDTO {
   @ApiProperty()
@@ -28,8 +30,8 @@ export class AuthUserResponseDTO {
   @IsString()
   display_name: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: AvatarResponseDTO })
   @IsOptional()
-  @IsString()
-  avatar_url: string;
+  @Type(() => AvatarResponseDTO)
+  avatar: AvatarResponseDTO;
 }

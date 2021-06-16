@@ -1,10 +1,10 @@
 import { Multipart } from 'fastify-multipart';
 import { join, extname } from 'path';
-import * as fs from 'fs';
-import { ReadStream } from 'fs';
+import { createWriteStream, ReadStream } from 'fs';
+import { tmpdir } from 'os';
 import { v4 as uuidv4 } from 'uuid';
 import { StorageException } from './exceptions/storage.exception';
-import { StorageError } from './enums/storage-error.enum';
+import { StorageError } from './enums/errors/storage.enum';
 
 export abstract class StorageAbstract {
   private multipart: Multipart;
@@ -22,8 +22,8 @@ export abstract class StorageAbstract {
   }
 
   protected async saveAsTemp(): Promise<string> {
-    const tmpFilePath = join('/tmp', uuidv4());
-    const writeStream = fs.createWriteStream(tmpFilePath);
+    const tmpFilePath = join(tmpdir(), uuidv4());
+    const writeStream = createWriteStream(tmpFilePath);
 
     return new Promise<string>((resolve, reject) => {
       this.multipart.file

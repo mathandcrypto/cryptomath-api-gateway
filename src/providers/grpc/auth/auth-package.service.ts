@@ -26,10 +26,12 @@ export class AuthPackageService implements OnModuleInit {
 
   async createAccessSession(
     userId: number,
+    ip: string,
+    userAgent: string
   ): Promise<[boolean, CreateAccessSessionResponse]> {
     try {
       const response = await this.client
-        .createAccessSession({ userId })
+        .createAccessSession({ userId, ip, userAgent })
         .toPromise();
 
       return [true, response];
