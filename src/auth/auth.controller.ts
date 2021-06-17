@@ -60,6 +60,11 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Log in as a user' })
   @ApiBasicAuth()
+  @ApiResponse({
+    status: 200,
+    type: LoginResponseDTO,
+    description: 'Access tokens data',
+  })
   async login(
     @Body() { email, password }: LoginRequestDTO,
     @GetClientIP() ip: string,
@@ -120,6 +125,11 @@ export class AuthController {
   @Post('/refresh')
   @HttpCode(200)
   @ApiOperation({ summary: 'Update a pair of jwt access tokens' })
+  @ApiResponse({
+    status: 200,
+    type: LoginResponseDTO,
+    description: 'Access tokens data',
+  })
   async refresh(
     @Body() { refresh_token }: RefreshRequestDTO,
     @GetClientIP() ip: string,
@@ -218,6 +228,10 @@ export class AuthController {
   @HttpCode(200)
   @ApiOperation({ summary: 'Log out as a user' })
   @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Successful logout',
+  })
   async logout(@GetAuthUser() user: AuthUser): Promise<void> {
     const userId = user.id;
 
@@ -245,6 +259,11 @@ export class AuthController {
   @Post('/register')
   @HttpCode(200)
   @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({
+    status: 200,
+    type: RegisterResponseDTO,
+    description: 'Registered user data',
+  })
   async register(
     @Body()
     {

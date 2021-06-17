@@ -30,7 +30,7 @@ export class AuthUserResponseDTO {
   @IsString()
   display_name: string;
 
-  @ApiProperty({ type: AvatarResponseDTO })
+  @ApiProperty({ type: AvatarResponseDTO, required: false })
   @IsOptional()
   @Type(() => AvatarResponseDTO)
   avatar: AvatarResponseDTO;

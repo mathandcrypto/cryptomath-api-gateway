@@ -26,6 +26,7 @@ import { SaveAvatarException } from './constants/exceptions/save-avatar.exceptio
 import { DeleteUserAvatarError } from './enums/errors/delete-user-avatar.enum';
 import { DeleteAvatarException } from './constants/exceptions/delete-avatar.exception';
 import { UploadAvatarSerializerService } from './serializers/upload-avatar.serializer';
+import { UploadAvatarRequestDTO } from './dto/upload-avatar-request.dto';
 import { UploadAvatarResponseDTO } from './dto/upload-avatar-response.dto';
 import { SaveAvatarRequestDTO } from './dto/save-avatar-request.dto';
 import { AvatarResponseDTO } from './dto/avatar-response.dto';
@@ -98,19 +99,7 @@ export class ProfileController {
   @UseInterceptors(FastifyFileInterceptor('avatar'))
   @ApiOperation({ summary: 'Upload user avatar image' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    type: 'multipart/form-data',
-    required: true,
-    schema: {
-      type: 'object',
-      properties: {
-        avatar: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
-  })
+  @ApiBody({ type: UploadAvatarRequestDTO })
   @ApiResponse({
     status: 200,
     type: UploadAvatarResponseDTO,
