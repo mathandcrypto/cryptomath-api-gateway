@@ -3,6 +3,7 @@ import {
   CreateUserResponse,
   FindByEmailAndPasswordResponse,
   FindOneResponse,
+  FindFromListResponse,
   FindAvatarResponse,
   DeleteAvatarResponse,
   CreateAvatarResponse,
@@ -75,6 +76,20 @@ export class UserPackageService implements OnModuleInit {
           password,
         })
         .toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async findFromList(
+    idList: number[],
+  ): Promise<[boolean, FindFromListResponse]> {
+    try {
+      const response = await this.client.findFromList({ idList }).toPromise();
 
       return [true, response];
     } catch (error) {

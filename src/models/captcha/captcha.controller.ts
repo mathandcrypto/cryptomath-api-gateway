@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   UseGuards,
 } from '@nestjs/common';
-import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-package-methods.service';
+import { CaptchaPackageService } from '@providers/grpc/captcha/captcha-package.service';
 import { GuestGuard } from '@auth/guards/guest.guard';
 import { CaptchaTokenService } from './captcha-token.service';
 import { CaptchaGenerateResponseDTO } from './dto/captcha-generate-response.dto';
@@ -16,7 +16,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 @UseGuards(GuestGuard)
 export class CaptchaController {
   constructor(
-    private readonly captchaPackageMethodsService: CaptchaPackageMethodsService,
+    private readonly captchaPackageService: CaptchaPackageService,
     private readonly captchaTokenService: CaptchaTokenService,
   ) {}
 
@@ -31,7 +31,7 @@ export class CaptchaController {
     const [
       generateStatus,
       generateResponse,
-    ] = await this.captchaPackageMethodsService.generateTask();
+    ] = await this.captchaPackageService.generateTask();
 
     if (!generateStatus) {
       throw new InternalServerErrorException(

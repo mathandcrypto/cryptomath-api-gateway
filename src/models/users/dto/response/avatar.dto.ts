@@ -1,7 +1,8 @@
 import { IsInt, IsNotEmpty, IsUrl } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Avatar } from '../../interfaces/avatar.interface';
 
-export class AvatarResponseDTO {
+export class AvatarResponseDTO implements Avatar {
   @ApiProperty()
   @IsInt()
   id: number;

@@ -1,25 +1,22 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
+  IsDate,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '@common/enums/role.enum';
-import { AvatarResponseDTO } from '@models/profile/dto/avatar-response.dto';
+import { AvatarResponseDTO } from '@models/users/dto/response/avatar.dto';
+import { Type } from 'class-transformer';
+import { User } from '../../interfaces/user.interface';
 
-export class AuthUserResponseDTO {
+export class UserResponseDTO implements User {
   @ApiProperty()
   @IsInt()
   id: number;
-
-  @ApiProperty()
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
 
   @ApiProperty({ enum: Role })
   @IsEnum(Role)
@@ -30,8 +27,17 @@ export class AuthUserResponseDTO {
   @IsString()
   display_name: string;
 
+  @ApiProperty()
+  @IsInt()
+  reputation: number;
+
   @ApiProperty({ type: AvatarResponseDTO, required: false })
   @IsOptional()
   @Type(() => AvatarResponseDTO)
+  @ValidateNested()
   avatar: AvatarResponseDTO;
+
+  @ApiProperty()
+  @IsDate()
+  created_at: Date;
 }

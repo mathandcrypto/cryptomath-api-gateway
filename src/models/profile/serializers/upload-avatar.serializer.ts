@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseSerializerService } from '@common/serializers/base.serializer';
-import { UploadAvatarResponseDTO } from '../dto/upload-avatar-response.dto';
+import { UploadAvatarResponseDTO } from '../dto/response/upload-avatar.dto';
 import { AWSObject } from '@common/interfaces/aws-object.interface';
 
 @Injectable()

@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
 import { AuthUser } from '@auth/interfaces/auth-user.interface';
-import { GetAuthUserProfileError } from './enums/errors/get-auth-user-profile.enum';
 import { AuthUserProfile } from './interfaces/auth-user-profile.interface';
 import { GetUserProfileError } from './enums/errors/get-user-profile.enum';
 import { UserProfile } from './interfaces/user-profile.interface';
@@ -32,35 +31,24 @@ export class ProfileService {
 
   async getAuthUserProfile(
     user: AuthUser,
-  ): Promise<[boolean, GetAuthUserProfileError, AuthUserProfile]> {
+  ): Promise<[boolean, AuthUserProfile]> {
     const userId = user.id;
 
-    const authUserProfileResponse = await Promise.all([
-      this.userPackageService.findAvatar(userId),
-      this.userPackageService.findProfile(userId),
-    ]);
-
-    const [findAvatarStatus, findAvatarResponse] = authUserProfileResponse[0];
-
-    if (!findAvatarStatus) {
-      return [false, GetAuthUserProfileError.FindAvatarError, null];
-    }
-
-    const [findProfileStatus, findProfileResponse] = authUserProfileResponse[1];
+    const [
+      findProfileStatus,
+      findProfileResponse,
+    ] = await this.userPackageService.findProfile(userId);
 
     if (!findProfileStatus) {
-      return [false, GetAuthUserProfileError.FindProfileError, null];
+      return [false, null];
     }
 
-    const { isAvatarExists, avatar } = findAvatarResponse;
     const { isProfileExists, profile } = findProfileResponse;
 
     return [
       true,
-      null,
       {
         ...user,
-        avatar: isAvatarExists ? avatar : null,
         profile: isProfileExists ? profile : null,
       },
     ];
@@ -84,32 +72,22 @@ export class ProfileService {
       return [false, GetUserProfileError.UserNotExists, null];
     }
 
-    const userProfileResponse = await Promise.all([
-      this.userPackageService.findAvatar(userId),
-      this.userPackageService.findProfile(userId),
-    ]);
-
-    const [findAvatarStatus, findAvatarResponse] = userProfileResponse[0];
-
-    if (!findAvatarStatus) {
-      return [false, GetUserProfileError.FindAvatarError, null];
-    }
-
-    const [findProfileStatus, findProfileResponse] = userProfileResponse[1];
+    const [
+      findProfileStatus,
+      findProfileResponse,
+    ] = await this.userPackageService.findProfile(userId);
 
     if (!findProfileStatus) {
       return [false, GetUserProfileError.FindProfileError, null];
     }
 
-    const { isAvatarExists, avatar } = findAvatarResponse;
     const { isProfileExists, profile } = findProfileResponse;
 
     return [
       true,
       null,
       {
-        user,
-        avatar: isAvatarExists ? avatar : null,
+        ...user,
         profile: isProfileExists ? profile : null,
       },
     ];

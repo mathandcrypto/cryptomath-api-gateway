@@ -4,7 +4,6 @@ import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { CAPTCHA_PACKAGE_NAME } from 'cryptomath-api-proto/types/captcha';
 import { CaptchaConfigService } from '@config/captcha/config.service';
 import { CaptchaPackageService } from './captcha-package.service';
-import { CaptchaPackageMethodsService } from './captcha-package-methods.service';
 import { join } from 'path';
 
 @Module({
@@ -31,8 +30,7 @@ import { join } from 'path';
       },
     },
     CaptchaPackageService,
-    CaptchaPackageMethodsService,
   ],
-  exports: [CaptchaPackageService, CaptchaPackageMethodsService],
+  exports: [CaptchaPackageService],
 })
 export class CaptchaPackageModule {}

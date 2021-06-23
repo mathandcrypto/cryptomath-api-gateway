@@ -1,29 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { BaseSerializerService } from '@common/serializers/base.serializer';
 import { AuthUserProfile } from '../interfaces/auth-user-profile.interface';
-import { ProfileResponseDTO } from '../dto/profile-response.dto';
-import { AvatarSerializerService } from './avatar.serializer';
+import { AuthUserProfileResponseDTO } from '../dto/response/auth-user-profile.dto';
 
 @Injectable()
 export class ProfileSerializerService extends BaseSerializerService<
   AuthUserProfile,
-  ProfileResponseDTO
+  AuthUserProfileResponseDTO
 > {
-  constructor(
-    private readonly avatarSerializerService: AvatarSerializerService,
-  ) {
-    super();
-  }
-
-  async serialize(authUserProfile: AuthUserProfile) {
+  async serialize(
+    authUserProfile: AuthUserProfile,
+  ): Promise<AuthUserProfileResponseDTO> {
     return {
-      id: authUserProfile.id,
-      email: authUserProfile.email,
-      role: authUserProfile.role,
-      display_name: authUserProfile.displayName,
-      avatar: authUserProfile.avatar
-        ? await this.avatarSerializerService.serialize(authUserProfile.avatar)
-        : null,
+      ...authUserProfile,
       bio: authUserProfile.profile?.bio,
       url: authUserProfile.profile?.url,
       location: authUserProfile.profile?.location,

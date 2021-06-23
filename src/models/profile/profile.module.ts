@@ -6,7 +6,7 @@ import { AWSS3Module } from '@providers/aws/s3/aws-s3.module';
 import { ProfileService } from './profile.service';
 import { ProfileSerializerService } from './serializers/profile.serializer';
 import { UploadAvatarSerializerService } from './serializers/upload-avatar.serializer';
-import { AvatarSerializerService } from './serializers/avatar.serializer';
+import { AvatarSerializerService } from '@models/users/serializers/avatar.serializer';
 import { ProfileController } from './profile.controller';
 
 @Module({

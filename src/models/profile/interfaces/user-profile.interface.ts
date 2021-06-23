@@ -1,7 +1,5 @@
-import { User, Avatar, Profile } from 'cryptomath-api-proto/types/user';
+import { User, Profile } from 'cryptomath-api-proto/types/user';
 
-export interface UserProfile {
-  user: User;
-  avatar?: Avatar;
-  profile?: Profile;
+export interface UserProfile extends User {
+  profile: Profile | null;
 }

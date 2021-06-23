@@ -6,12 +6,9 @@ import { LoginError } from './enums/errors/login.enum';
 import { LogoutError } from './enums/errors/logout.enum';
 import { RefreshError } from './enums/errors/refresh.enum';
 import { RegisterError } from './enums/errors/register.enum';
-import { LoginResponse } from './interfaces/login-response.interface';
-import { RefreshResponse } from './interfaces/refresh-response.interface';
-import { RegisterResponse } from './interfaces/register-response.interface';
-import { AuthUser } from './interfaces/auth-user.interface';
-import { AuthUserExtra } from './interfaces/auth-user-extra.interface';
-import { GetUserExtraError } from './enums/errors/get-user-extra.enum';
+import { AuthLogin } from './interfaces/login.interface';
+import { AuthRefresh } from './interfaces/refresh.interface';
+import { AuthRegister } from './interfaces/register.interface';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +23,7 @@ export class AuthService {
     password: string,
     ip: string,
     userAgent: string,
-  ): Promise<[boolean, LoginError, LoginResponse]> {
+  ): Promise<[boolean, LoginError, AuthLogin]> {
     const [
       validateStatus,
       validateResponse,
@@ -99,7 +96,7 @@ export class AuthService {
     refreshSecret: string,
     ip: string,
     userAgent: string,
-  ): Promise<[boolean, RefreshError, RefreshResponse]> {
+  ): Promise<[boolean, RefreshError, AuthRefresh]> {
     const [
       deleteSessionStatus,
       deleteSessionResponse,
@@ -151,7 +148,7 @@ export class AuthService {
     displayName: string,
     email: string,
     password: string,
-  ): Promise<[boolean, RegisterError, RegisterResponse]> {
+  ): Promise<[boolean, RegisterError, AuthRegister]> {
     const [
       createStatus,
       createResponse,
@@ -183,22 +180,5 @@ export class AuthService {
     }
 
     return [true, null, { userId: id }];
-  }
-
-  async getUserExtra(
-    user: AuthUser,
-  ): Promise<[boolean, GetUserExtraError, AuthUserExtra]> {
-    const [
-      findAvatarStatus,
-      findAvatarResponse,
-    ] = await this.userPackageService.findAvatar(user.id);
-
-    if (!findAvatarStatus) {
-      return [false, GetUserExtraError.FindAvatarError, null];
-    }
-
-    const { isAvatarExists, avatar } = findAvatarResponse;
-
-    return [true, null, { ...user, avatar: isAvatarExists ? avatar : null }];
   }
 }

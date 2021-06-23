@@ -4,7 +4,7 @@ import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { TokenExpiredError } from 'jsonwebtoken';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
-import { ResolveRefreshTokenResponse } from './interfaces/resolve-refresh-token-response.interface';
+import { AuthResolveRefreshToken } from './interfaces/resolve-refresh-token.interface';
 import { ResolveRefreshTokenError } from './enums/errors/resolve-refresh-token.enum';
 import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 
@@ -66,7 +66,7 @@ export class TokenService {
     [
       boolean,
       DecodeJwtTokenError | ResolveRefreshTokenError,
-      ResolveRefreshTokenResponse,
+      AuthResolveRefreshToken,
     ]
   > {
     const [decodeStatus, errorType, payload] = await this.decodeRefreshToken(

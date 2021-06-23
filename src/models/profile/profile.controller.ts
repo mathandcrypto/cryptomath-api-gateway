@@ -14,9 +14,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { ProfileService } from './profile.service';
-import { GetAuthUserProfileError } from './enums/errors/get-auth-user-profile.enum';
 import { GetAuthUserProfileException } from './constants/exceptions/get-auth-user-profile.exception';
-import { ProfileResponseDTO } from './dto/profile-response.dto';
+import { AuthUserProfileResponseDTO } from './dto/response/auth-user-profile.dto';
 import { ProfileSerializerService } from './serializers/profile.serializer';
 import { UploadAvatarError } from './enums/errors/upload-avatar.enum';
 import { UploadAvatarException } from './constants/exceptions/upload-avatar.exception';
@@ -26,15 +25,15 @@ import { SaveAvatarException } from './constants/exceptions/save-avatar.exceptio
 import { DeleteUserAvatarError } from './enums/errors/delete-user-avatar.enum';
 import { DeleteAvatarException } from './constants/exceptions/delete-avatar.exception';
 import { UploadAvatarSerializerService } from './serializers/upload-avatar.serializer';
-import { UploadAvatarRequestDTO } from './dto/upload-avatar-request.dto';
-import { UploadAvatarResponseDTO } from './dto/upload-avatar-response.dto';
-import { SaveAvatarRequestDTO } from './dto/save-avatar-request.dto';
-import { AvatarResponseDTO } from './dto/avatar-response.dto';
-import { AvatarSerializerService } from './serializers/avatar.serializer';
-import { GetAuthUser } from '@common/decorators/get-auth-user.decorator';
+import { UploadAvatarRequestDTO } from './dto/request/upload-avatar.dto';
+import { UploadAvatarResponseDTO } from './dto/response/upload-avatar.dto';
+import { SaveAvatarRequestDTO } from './dto/request/save-avatar.dto';
+import { AvatarResponseDTO } from '@models/users/dto/response/avatar.dto';
+import { AvatarSerializerService } from '@models/users/serializers/avatar.serializer';
+import { GetAuthUser } from '@common/decorators/requests/get-auth-user.decorator';
 import { AuthUser } from '@auth/interfaces/auth-user.interface';
 import { FastifyFileInterceptor } from '@common/interceptors/fastify-file.interceptor';
-import { FastifyUploadedFile } from '@common/decorators/fastify-uploaded-file.decorator';
+import { FastifyUploadedFile } from '@common/decorators/requests/fastify-uploaded-file.decorator';
 import { Multipart } from 'fastify-multipart';
 import {
   ApiBearerAuth,
@@ -62,31 +61,21 @@ export class ProfileController {
   @ApiOperation({ summary: 'Get profile data of an authorized user' })
   @ApiResponse({
     status: 200,
-    type: ProfileResponseDTO,
+    type: AuthUserProfileResponseDTO,
     description: 'Authorized user profile data',
   })
-  async getProfile(@GetAuthUser() user: AuthUser): Promise<ProfileResponseDTO> {
+  async getProfile(
+    @GetAuthUser() user: AuthUser,
+  ): Promise<AuthUserProfileResponseDTO> {
     const [
       authUserProfileStatus,
-      authUserProfileError,
       authUserProfileResponse,
     ] = await this.profileService.getAuthUserProfile(user);
 
     if (!authUserProfileStatus) {
-      switch (authUserProfileError) {
-        case GetAuthUserProfileError.FindAvatarError:
-          throw new InternalServerErrorException(
-            GetAuthUserProfileException.FindAvatarError,
-          );
-        case GetAuthUserProfileError.FindProfileError:
-          throw new InternalServerErrorException(
-            GetAuthUserProfileException.FindProfileError,
-          );
-        default:
-          throw new InternalServerErrorException(
-            GetAuthUserProfileException.UnknownProfileFindError,
-          );
-      }
+      throw new InternalServerErrorException(
+        GetAuthUserProfileException.FindProfileError,
+      );
     }
 
     return await this.profileSerializerService.serialize(

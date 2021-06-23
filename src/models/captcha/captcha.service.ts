@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CaptchaTokenService } from './captcha-token.service';
-import { CaptchaPackageMethodsService } from '@providers/grpc/captcha/captcha-package-methods.service';
+import { CaptchaPackageService } from '@providers/grpc/captcha/captcha-package.service';
 import { ValidateAnswerError } from './enums/errors/validate-answer.enum';
 import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 
@@ -8,7 +8,7 @@ import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum'
 export class CaptchaService {
   constructor(
     private readonly captchaTokenService: CaptchaTokenService,
-    private readonly captchaPackageMethodsService: CaptchaPackageMethodsService,
+    private readonly captchaPackageService: CaptchaPackageService,
   ) {}
 
   async validateAnswer(
@@ -30,11 +30,7 @@ export class CaptchaService {
     const [
       validateStatus,
       validateResponse,
-    ] = await this.captchaPackageMethodsService.validateTask(
-      uuid,
-      params,
-      answer,
-    );
+    ] = await this.captchaPackageService.validateTask(uuid, params, answer);
 
     if (!validateStatus) {
       return [false, ValidateAnswerError.ValidateTaskError, false];

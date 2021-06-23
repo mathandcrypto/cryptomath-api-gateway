@@ -12,7 +12,6 @@ import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { RoleSerializerService } from './serializers/role.serializer';
 import { AuthUserSerializerService } from './serializers/auth-user.serializer';
 import { AuthController } from './auth.controller';
 
@@ -50,7 +49,6 @@ import { AuthController } from './auth.controller';
     TokenService,
     LocalStrategy,
     JwtStrategy,
-    RoleSerializerService,
     AuthUserSerializerService,
   ],
   controllers: [AuthController],

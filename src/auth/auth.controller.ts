@@ -23,21 +23,19 @@ import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum'
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GuestGuard } from './guards/guest.guard';
-import { LoginRequestDTO } from './dto/login-request.dto';
-import { RefreshRequestDTO } from './dto/refresh-request.dto';
-import { RegisterRequestDTO } from './dto/register-request.dto';
+import { LoginRequestDTO } from './dto/request/login.dto';
+import { RefreshRequestDTO } from './dto/request/refresh.dto';
+import { RegisterRequestDTO } from './dto/request/register.dto';
 import { ResolveRefreshTokenError } from './enums/errors/resolve-refresh-token.enum';
 import { CaptchaService } from '@models/captcha/captcha.service';
 import { ValidateAnswerError } from '@models/captcha/enums/errors/validate-answer.enum';
-import { LoginResponseDTO } from './dto/login-response.dto';
-import { RegisterResponseDTO } from './dto/register-response.dto';
-import { AuthUserResponseDTO } from './dto/auth-user-response.dto';
+import { LoginResponseDTO } from './dto/response/login.dto';
+import { RegisterResponseDTO } from './dto/response/register.dto';
+import { AuthUserResponseDTO } from './dto/response/auth-user.dto';
 import { AuthUser } from './interfaces/auth-user.interface';
-import { GetAuthUser } from '@common/decorators/get-auth-user.decorator';
-import { GetUserExtraError } from './enums/errors/get-user-extra.enum';
-import { AuthUserException } from './constants/exceptions/auth-user.exception';
-import { GetClientIP } from '@common/decorators/get-client-ip.decorator';
-import { GetClientUserAgent } from '@common/decorators/get-client-user-agent.decorator';
+import { GetAuthUser } from '@common/decorators/requests/get-auth-user.decorator';
+import { GetClientIP } from '@common/decorators/requests/get-client-ip.decorator';
+import { GetClientUserAgent } from '@common/decorators/requests/get-client-user-agent.decorator';
 import {
   ApiBasicAuth,
   ApiBearerAuth,
@@ -348,38 +346,6 @@ export class AuthController {
   })
   @ApiBearerAuth()
   async getUser(@GetAuthUser() user: AuthUser): Promise<AuthUserResponseDTO> {
-    const [
-      userExtraStatus,
-      userExtraError,
-      userExtraResponse,
-    ] = await this.authService.getUserExtra(user);
-
-    if (!userExtraStatus) {
-      switch (userExtraError) {
-        case GetUserExtraError.FindAvatarError:
-          throw new InternalServerErrorException(
-            AuthUserException.FindAvatarError,
-          );
-        default:
-          throw new InternalServerErrorException(
-            AuthUserException.UnknownError,
-          );
-      }
-    }
-
-    const { id, email, role, displayName, avatar } = userExtraResponse;
-
-    return {
-      id,
-      email,
-      role,
-      display_name: displayName,
-      avatar: avatar
-        ? {
-            id: avatar.id,
-            url: avatar.url,
-          }
-        : null,
-    };
+    return user;
   }
 }
