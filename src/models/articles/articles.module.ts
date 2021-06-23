@@ -7,7 +7,9 @@ import { HubSerializerService } from './serializers/hub.serializer';
 import { HubLogoSerializerService } from './serializers/hub-logo.serializer';
 import { TagSerializerService } from './serializers/tag.serializer';
 import { ArticlesService } from './articles.service';
+import { HubsService } from './hubs.service';
 import { ArticlesController } from './articles.controller';
+import { HubsController } from './hubs.controller';
 
 @Module({
   imports: [ArticlesPackageModule, UserPackageModule, UsersModule],
@@ -17,7 +19,8 @@ import { ArticlesController } from './articles.controller';
     HubLogoSerializerService,
     TagSerializerService,
     ArticlesService,
+    HubsService,
   ],
-  controllers: [ArticlesController],
+  controllers: [ArticlesController, HubsController],
 })
 export class ArticlesModule {}
