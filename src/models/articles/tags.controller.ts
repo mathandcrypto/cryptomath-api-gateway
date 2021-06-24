@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   InternalServerErrorException,
+  Param,
+  ParseIntPipe,
   Query,
 } from '@nestjs/common';
 import { TagsService } from './tags.service';
@@ -10,7 +12,16 @@ import { GetTagsQueryDTO } from './dto/request/query/get-tags.dto';
 import { TagsListResponseDTO } from './dto/response/tags-list.dto';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { GetTagsException } from './constants/exceptions/get-tags.exception';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { TagResponseDTO } from './dto/response/tag.dto';
+import { FindOneError } from './enums/errors/find-one.enum';
+import { GetTagException } from './constants/exceptions/get-tag.exception';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('tags')
 @Controller('tags')
@@ -123,5 +134,35 @@ export class TagsController {
       total,
       tags: await this.tagSerializerService.serializeCollection(tags),
     };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get tag data by id' })
+  @ApiParam({ name: 'id', description: 'Tag id' })
+  @ApiResponse({
+    status: 200,
+    type: TagResponseDTO,
+    description: 'Tag data',
+  })
+  async getTag(
+    @Param('id', ParseIntPipe) tagId: number,
+  ): Promise<TagResponseDTO> {
+    const [findOneStatus, findOneError, tag] = await this.tagsService.findOne(
+      tagId,
+    );
+
+    if (!findOneStatus) {
+      switch (findOneError) {
+        case FindOneError.FindTagError:
+        case FindOneError.TagNotExists:
+          throw new InternalServerErrorException(GetTagException.FindTagError);
+        default:
+          throw new InternalServerErrorException(
+            GetTagException.UnknownGetTagError,
+          );
+      }
+    }
+
+    return await this.tagSerializerService.serialize(tag);
   }
 }

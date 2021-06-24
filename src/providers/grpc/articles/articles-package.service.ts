@@ -12,6 +12,8 @@ import {
   TagsFilters,
   TagsSorts,
   FindTagsResponse,
+  FindHubResponse,
+  FindTagResponse,
 } from 'cryptomath-api-proto/types/articles';
 import { ClientGrpc } from '@nestjs/microservices';
 
@@ -76,6 +78,30 @@ export class ArticlesPackageService implements OnModuleInit {
       const response = await this.client
         .findTags({ filters, sorts, offset, limit })
         .toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async findHub(hubId: number): Promise<[boolean, FindHubResponse]> {
+    try {
+      const response = await this.client.findHub({ hubId }).toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async findTag(tagId: number): Promise<[boolean, FindTagResponse]> {
+    try {
+      const response = await this.client.findTag({ tagId }).toPromise();
 
       return [true, response];
     } catch (error) {

@@ -2,15 +2,26 @@ import {
   Controller,
   Get,
   InternalServerErrorException,
+  Param,
+  ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { GetHubsQueryDTO } from './dto/request/query/get-hubs.dto';
 import { HubsListResponseDTO } from './dto/response/hubs-list.dto';
 import { HubsService } from './hubs.service';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { GetHubsException } from './constants/exceptions/get-hubs.exception';
 import { HubSerializerService } from './serializers/hub.serializer';
+import { HubResponseDTO } from './dto/response/hub.dto';
+import { FindOneError } from './enums/errors/find-one.enum';
+import { GetHubException } from './constants/exceptions/get-hub.exception';
 
 @ApiTags('hubs')
 @Controller('hubs')
@@ -150,5 +161,35 @@ export class HubsController {
       total,
       hubs: await this.hubSerializerService.serializeCollection(hubs),
     };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get hub data by id' })
+  @ApiParam({ name: 'id', description: 'Hub id' })
+  @ApiResponse({
+    status: 200,
+    type: HubResponseDTO,
+    description: 'Hub data',
+  })
+  async getHub(
+    @Param('id', ParseIntPipe) hubId: number,
+  ): Promise<HubResponseDTO> {
+    const [findOneStatus, findOneError, hub] = await this.hubsService.findOne(
+      hubId,
+    );
+
+    if (!findOneStatus) {
+      switch (findOneError) {
+        case FindOneError.FindHubError:
+        case FindOneError.HubNotExists:
+          throw new InternalServerErrorException(GetHubException.FindHubError);
+        default:
+          throw new InternalServerErrorException(
+            GetHubException.UnknownGetHubError,
+          );
+      }
+    }
+
+    return await this.hubSerializerService.serialize(hub);
   }
 }

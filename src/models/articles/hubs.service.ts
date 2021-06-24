@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ArticlesPackageService } from '@providers/grpc/articles/articles-package.service';
 import { NumericRangeQuery } from '@common/interfaces/requests/query/numeric-range.interface';
-import { HubsFilters, HubsSorts } from 'cryptomath-api-proto/types/articles';
+import {
+  Hub,
+  HubsFilters,
+  HubsSorts,
+} from 'cryptomath-api-proto/types/articles';
 import { HubsSortsQuery } from './interfaces/hubs-sorts-query.interface';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { HubsList } from './interfaces/hubs-list.interface';
+import { FindOneError } from './enums/errors/find-one.enum';
 import { sortOrderToProto } from '@common/helpers/sorts';
 
 @Injectable()
@@ -108,5 +113,24 @@ export class HubsService {
         hubs: hubs || [],
       },
     ];
+  }
+
+  async findOne(hubId: number): Promise<[boolean, FindOneError, Hub]> {
+    const [
+      findHubStatus,
+      findHubResponse,
+    ] = await this.articlesPackageService.findHub(hubId);
+
+    if (!findHubStatus) {
+      return [false, FindOneError.FindHubError, null];
+    }
+
+    const { isHubExists, hub } = findHubResponse;
+
+    if (!isHubExists) {
+      return [false, FindOneError.HubNotExists, null];
+    }
+
+    return [true, null, hub];
   }
 }

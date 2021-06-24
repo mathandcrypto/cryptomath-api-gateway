@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ArticlesPackageService } from '@providers/grpc/articles/articles-package.service';
 import { NumericRangeQuery } from '@common/interfaces/requests/query/numeric-range.interface';
-import { TagsFilters, TagsSorts } from 'cryptomath-api-proto/types/articles';
+import {
+  TagsFilters,
+  TagsSorts,
+  Tag,
+} from 'cryptomath-api-proto/types/articles';
 import { TagsSortsQuery } from './interfaces/tags-sorts-query.interface';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { TagsList } from './interfaces/tags-list.interface';
 import { sortOrderToProto } from '@common/helpers/sorts';
+import { FindOneError } from '@models/articles/enums/errors/find-one.enum';
 
 @Injectable()
 export class TagsService {
@@ -95,5 +100,24 @@ export class TagsService {
         tags: tags || [],
       },
     ];
+  }
+
+  async findOne(tagId: number): Promise<[boolean, FindOneError, Tag]> {
+    const [
+      findTagStatus,
+      findTagResponse,
+    ] = await this.articlesPackageService.findTag(tagId);
+
+    if (!findTagStatus) {
+      return [false, FindOneError.FindTagError, null];
+    }
+
+    const { isTagExists, tag } = findTagResponse;
+
+    if (!isTagExists) {
+      return [false, FindOneError.TagNotExists, null];
+    }
+
+    return [true, null, tag];
   }
 }
