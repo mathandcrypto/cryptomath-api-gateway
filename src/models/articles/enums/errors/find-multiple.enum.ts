@@ -5,4 +5,6 @@ export enum FindMultipleError {
   UsersNotFound = 'users_not_found',
   FindHubsError = 'find_hubs_error',
   HubsNotFound = 'hubs_not_found',
+  FindTagsError = 'find_tags_error',
+  TagsNotFound = 'tags_not_found',
 }

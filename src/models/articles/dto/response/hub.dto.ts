@@ -6,8 +6,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { HubLogoResponseDTO } from './hub-logo.dto';
 import { ApiProperty } from '@nestjs/swagger';
+import { HubLogoResponseDTO } from './hub-logo.dto';
 
 export class HubResponseDTO {
   @ApiProperty()

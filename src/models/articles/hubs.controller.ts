@@ -94,7 +94,7 @@ export class HubsController {
   @ApiResponse({
     status: 200,
     type: HubsListResponseDTO,
-    description: 'List of articles',
+    description: 'List of hubs',
   })
   async getHubs(
     @Query()

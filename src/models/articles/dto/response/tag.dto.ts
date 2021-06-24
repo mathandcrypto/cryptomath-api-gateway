@@ -1,5 +1,7 @@
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, ValidateNested } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { HubResponseDTO } from './hub.dto';
 
 export class TagResponseDTO {
   @ApiProperty()
@@ -15,6 +17,11 @@ export class TagResponseDTO {
   @IsNotEmpty()
   @IsString()
   description: string;
+
+  @ApiProperty({ type: HubResponseDTO })
+  @Type(() => HubResponseDTO)
+  @ValidateNested()
+  hub: HubResponseDTO;
 
   @ApiProperty()
   @IsInt()
