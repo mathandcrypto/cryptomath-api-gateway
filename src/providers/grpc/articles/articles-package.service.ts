@@ -14,6 +14,7 @@ import {
   FindTagsResponse,
   FindHubResponse,
   FindTagResponse,
+  CreateHubResponse,
 } from 'cryptomath-api-proto/types/articles';
 import { ClientGrpc } from '@nestjs/microservices';
 
@@ -102,6 +103,23 @@ export class ArticlesPackageService implements OnModuleInit {
   async findTag(tagId: number): Promise<[boolean, FindTagResponse]> {
     try {
       const response = await this.client.findTag({ tagId }).toPromise();
+
+      return [true, response];
+    } catch (error) {
+      this.logger.error(error);
+
+      return [false, null];
+    }
+  }
+
+  async createHub(
+    name: string,
+    description: string,
+  ): Promise<[boolean, CreateHubResponse]> {
+    try {
+      const response = await this.client
+        .creteHub({ name, description })
+        .toPromise();
 
       return [true, response];
     } catch (error) {

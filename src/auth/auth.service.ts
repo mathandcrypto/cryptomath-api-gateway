@@ -168,16 +168,7 @@ export class AuthService {
 
     const { id, confirmCode } = createdUser;
 
-    const [sendMailStatus] = this.mailerService.sendRegisterNotify(
-      id,
-      email,
-      displayName,
-      confirmCode,
-    );
-
-    if (!sendMailStatus) {
-      return [false, RegisterError.SentNotifyMailError, null];
-    }
+    this.mailerService.sendRegisterNotify(id, email, displayName, confirmCode);
 
     return [true, null, { userId: id }];
   }

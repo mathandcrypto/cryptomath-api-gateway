@@ -10,6 +10,7 @@ import { HubsSortsQuery } from './interfaces/hubs-sorts-query.interface';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { HubsList } from './interfaces/hubs-list.interface';
 import { FindOneError } from './enums/errors/find-one.enum';
+import { CreateHubError } from './enums/errors/create-hub.error';
 import { sortOrderToProto } from '@common/helpers/sorts';
 
 @Injectable()
@@ -129,6 +130,28 @@ export class HubsService {
 
     if (!isHubExists) {
       return [false, FindOneError.HubNotExists, null];
+    }
+
+    return [true, null, hub];
+  }
+
+  async createHub(
+    name: string,
+    description: string,
+  ): Promise<[boolean, CreateHubError, Hub]> {
+    const [
+      createHubStatus,
+      createHubResponse,
+    ] = await this.articlesPackageService.createHub(name, description);
+
+    if (!createHubStatus) {
+      return [false, CreateHubError.CreateHubError, null];
+    }
+
+    const { isHubCreated, hub } = createHubResponse;
+
+    if (!isHubCreated) {
+      return [false, CreateHubError.HubNotCreated, null];
     }
 
     return [true, null, hub];

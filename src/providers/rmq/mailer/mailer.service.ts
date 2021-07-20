@@ -17,23 +17,15 @@ export class MailerService {
     email: string,
     displayName: string,
     confirmCode: string,
-  ): [boolean, Observable<SendRegisterNotifyResponse>] {
-    try {
-      const observable = this.client.emit<
-        SendRegisterNotifyResponse,
-        SendRegisterNotifyRequest
-      >('send-register-notify', {
-        userId,
-        email,
-        displayName,
-        confirmCode,
-      });
-
-      return [true, observable];
-    } catch (error) {
-      this.logger.log(error);
-
-      return [false, null];
-    }
+  ): Observable<SendRegisterNotifyResponse> {
+    return this.client.emit<
+      SendRegisterNotifyResponse,
+      SendRegisterNotifyRequest
+    >('send-register-notify', {
+      userId,
+      email,
+      displayName,
+      confirmCode,
+    });
   }
 }

@@ -1,18 +1,15 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
   InternalServerErrorException,
   Param,
   ParseIntPipe,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
 import { GetHubsQueryDTO } from './dto/request/query/get-hubs.dto';
 import { HubsListResponseDTO } from './dto/response/hubs-list.dto';
 import { HubsService } from './hubs.service';
@@ -22,6 +19,22 @@ import { HubSerializerService } from './serializers/hub.serializer';
 import { HubResponseDTO } from './dto/response/hub.dto';
 import { FindOneError } from './enums/errors/find-one.enum';
 import { GetHubException } from './constants/exceptions/get-hub.exception';
+import { CreateHubRequestDTO } from './dto/request/create-hub.dto';
+import { CreateHubError } from './enums/errors/create-hub.error';
+import { CreateHubException } from './constants/exceptions/create-hub.exception';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { Role } from '@common/enums/role.enum';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('hubs')
 @Controller('hubs')
@@ -186,6 +199,47 @@ export class HubsController {
         default:
           throw new InternalServerErrorException(
             GetHubException.UnknownGetHubError,
+          );
+      }
+    }
+
+    return await this.hubSerializerService.serialize(hub);
+  }
+
+  @Post()
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Create a new hub' })
+  @ApiBearerAuth()
+  @ApiBody({ type: CreateHubRequestDTO })
+  @ApiResponse({
+    status: 200,
+    type: HubResponseDTO,
+    description: 'Hub data',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  async createHub(
+    @Body() { name, description }: CreateHubRequestDTO,
+  ): Promise<HubResponseDTO> {
+    const [
+      createHubStatus,
+      createHubError,
+      hub,
+    ] = await this.hubsService.createHub(name, description);
+
+    if (!createHubStatus) {
+      switch (createHubError) {
+        case CreateHubError.CreateHubError:
+          throw new InternalServerErrorException(
+            CreateHubException.CreateHubError,
+          );
+        case CreateHubError.HubNotCreated:
+          throw new InternalServerErrorException(
+            CreateHubException.HubNotCreated,
+          );
+        default:
+          throw new InternalServerErrorException(
+            CreateHubException.UnknownCreateHubError,
           );
       }
     }

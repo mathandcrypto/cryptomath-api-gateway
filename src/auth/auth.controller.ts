@@ -317,10 +317,6 @@ export class AuthController {
           );
         case RegisterError.UserAlreadyExists:
           throw new ForbiddenException(RegisterException.UserAlreadyExists);
-        case RegisterError.SentNotifyMailError:
-          throw new InternalServerErrorException(
-            RegisterException.SentNotifyMailError,
-          );
         default:
           throw new InternalServerErrorException(
             RegisterException.CreateUserUnknownError,

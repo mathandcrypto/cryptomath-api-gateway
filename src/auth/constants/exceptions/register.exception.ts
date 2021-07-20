@@ -35,10 +35,6 @@ export const RegisterException = {
     code: 'user_already_exists',
     message: 'Failed to sent registration notify mail',
   },
-  SentNotifyMailError: {
-    code: 'send_notify_mail_error',
-    message: 'Failed to sent registration notify mail',
-  },
   CreateUserUnknownError: {
     code: 'create_user_unknown_error',
     message: 'Unknown user creation error',
