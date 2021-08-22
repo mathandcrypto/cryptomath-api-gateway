@@ -5,8 +5,9 @@ import {
   CaptchaServiceClient,
   GenerateTaskResponse,
   ValidateTaskResponse,
-} from 'cryptomath-api-proto/types/captcha';
+} from '@cryptomath/cryptomath-api-proto/types/captcha';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CaptchaPackageService implements OnModuleInit {
@@ -16,16 +17,14 @@ export class CaptchaPackageService implements OnModuleInit {
   constructor(@Inject(CAPTCHA_PACKAGE_NAME) private clientGrpc: ClientGrpc) {}
 
   onModuleInit() {
-    this.client = this.clientGrpc.getService<CaptchaServiceClient>(
-      CAPTCHA_SERVICE_NAME,
-    );
+    this.client =
+      this.clientGrpc.getService<CaptchaServiceClient>(CAPTCHA_SERVICE_NAME);
   }
 
-  async generateTask(difficulty = 5): Promise<[boolean, GenerateTaskResponse]> {
+  async generateTask(): Promise<[boolean, GenerateTaskResponse]> {
     try {
-      const response = await this.client
-        .generateTask({ difficulty })
-        .toPromise();
+      const observable = this.client.generateTask({});
+      const response = await firstValueFrom<GenerateTaskResponse>(observable);
 
       return [true, response];
     } catch (error) {
@@ -37,17 +36,14 @@ export class CaptchaPackageService implements OnModuleInit {
 
   async validateTask(
     uuid: string,
-    params: number[],
     answer: number,
   ): Promise<[boolean, ValidateTaskResponse]> {
     try {
-      const response = await this.client
-        .validateTask({
-          uuid,
-          params,
-          answer,
-        })
-        .toPromise();
+      const observable = this.client.validateTask({
+        uuid,
+        answer,
+      });
+      const response = await firstValueFrom<ValidateTaskResponse>(observable);
 
       return [true, response];
     } catch (error) {

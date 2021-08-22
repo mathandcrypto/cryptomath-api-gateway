@@ -46,7 +46,7 @@ export class HubsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get a list of hubs by the specified filters and sortings',
+    summary: 'Get a list of hubs by the specified filters and sorts',
   })
   @ApiQuery({
     name: 'tags',
@@ -72,6 +72,7 @@ export class HubsController {
       },
     },
   })
+  @ApiQuery({})
   @ApiQuery({
     name: 'articles',
     type: String,
@@ -125,7 +126,7 @@ export class HubsController {
     {
       id,
       name,
-      tags_list: tagsList,
+      tags_list,
       articles,
       tags,
       sorts,
@@ -133,24 +134,21 @@ export class HubsController {
       limit,
     }: GetHubsQueryDTO,
   ): Promise<HubsListResponseDTO> {
-    const hubsFilters = this.hubsService.prepareFilters(
+    const hubsFilters = this.hubsService.prepareFilters({
       id,
       name,
-      tagsList,
+      tags_list,
       articles,
       tags,
-    );
+    });
     const hubsSorts = this.hubsService.prepareSorts(sorts);
-    const [
-      findMultipleStatus,
-      findMultipleError,
-      findMultipleResponse,
-    ] = await this.hubsService.findMultiple(
-      hubsFilters,
-      hubsSorts,
-      offset,
-      limit,
-    );
+    const [findMultipleStatus, findMultipleError, findMultipleResponse] =
+      await this.hubsService.findMultiple(
+        hubsFilters,
+        hubsSorts,
+        offset,
+        limit,
+      );
 
     if (!findMultipleStatus) {
       switch (findMultipleError) {
@@ -208,7 +206,10 @@ export class HubsController {
 
   @Post()
   @HttpCode(200)
-  @ApiOperation({ summary: 'Create a new hub' })
+  @ApiOperation({
+    summary: 'Create a new hub.',
+    description: 'Available only to administrators.',
+  })
   @ApiBearerAuth()
   @ApiBody({ type: CreateHubRequestDTO })
   @ApiResponse({
@@ -221,11 +222,8 @@ export class HubsController {
   async createHub(
     @Body() { name, description }: CreateHubRequestDTO,
   ): Promise<HubResponseDTO> {
-    const [
-      createHubStatus,
-      createHubError,
-      hub,
-    ] = await this.hubsService.createHub(name, description);
+    const [createHubStatus, createHubError, hub] =
+      await this.hubsService.createHub(name, description);
 
     if (!createHubStatus) {
       switch (createHubError) {

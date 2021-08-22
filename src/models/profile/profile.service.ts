@@ -4,13 +4,14 @@ import { AuthUser } from '@auth/interfaces/auth-user.interface';
 import { AuthUserProfile } from './interfaces/auth-user-profile.interface';
 import { GetUserProfileError } from './enums/errors/get-user-profile.enum';
 import { UserProfile } from './interfaces/user-profile.interface';
-import { InjectS3, S3 } from 'nestjs-s3';
+import { InjectAwsService } from 'nest-aws-sdk';
+import { S3 } from 'aws-sdk';
 import { Multipart } from 'fastify-multipart';
 import { UploadAvatarError } from './enums/errors/upload-avatar.enum';
 import { SaveAvatarError } from './enums/errors/save-avatar.enum';
 import { CreateUserAvatarError } from './enums/errors/create-user-avatar.enum';
 import { DeleteUserAvatarError } from './enums/errors/delete-user-avatar.enum';
-import { Avatar } from 'cryptomath-api-proto/types/user';
+import { Avatar } from '@cryptomath/cryptomath-api-proto/types/user';
 import { ImageStorage } from '@common/shared/storage/adapters/image-storage.adapter';
 import { StorageException } from '@common/shared/storage/exceptions/storage.exception';
 import { AWSConfigService } from '@config/aws/config.service';
@@ -26,7 +27,7 @@ export class ProfileService {
     private readonly userPackageService: UserPackageService,
     private readonly awsConfigService: AWSConfigService,
     @Inject('IMAGE_STORAGE') private readonly imageStorage: ImageStorage,
-    @InjectS3() private readonly s3: S3,
+    @InjectAwsService(S3) private readonly s3: S3,
   ) {}
 
   async getAuthUserProfile(
@@ -34,10 +35,8 @@ export class ProfileService {
   ): Promise<[boolean, AuthUserProfile]> {
     const userId = user.id;
 
-    const [
-      findProfileStatus,
-      findProfileResponse,
-    ] = await this.userPackageService.findProfile(userId);
+    const [findProfileStatus, findProfileResponse] =
+      await this.userPackageService.findProfile(userId);
 
     if (!findProfileStatus) {
       return [false, null];
@@ -57,10 +56,8 @@ export class ProfileService {
   async getUserProfile(
     userId: number,
   ): Promise<[boolean, GetUserProfileError, UserProfile]> {
-    const [
-      findUserStatus,
-      findUserResponse,
-    ] = await this.userPackageService.findOne(userId);
+    const [findUserStatus, findUserResponse] =
+      await this.userPackageService.findOne(userId);
 
     if (!findUserStatus) {
       return [false, GetUserProfileError.FindUserError, null];
@@ -72,10 +69,8 @@ export class ProfileService {
       return [false, GetUserProfileError.UserNotExists, null];
     }
 
-    const [
-      findProfileStatus,
-      findProfileResponse,
-    ] = await this.userPackageService.findProfile(userId);
+    const [findProfileStatus, findProfileResponse] =
+      await this.userPackageService.findProfile(userId);
 
     if (!findProfileStatus) {
       return [false, GetUserProfileError.FindProfileError, null];
@@ -200,10 +195,8 @@ export class ProfileService {
     userId: number,
     avatarId: number,
   ): Promise<[boolean, DeleteUserAvatarError, Avatar]> {
-    const [
-      deleteAvatarStatus,
-      deleteAvatarResponse,
-    ] = await this.userPackageService.deleteAvatar(userId, avatarId);
+    const [deleteAvatarStatus, deleteAvatarResponse] =
+      await this.userPackageService.deleteAvatar(userId, avatarId);
 
     if (!deleteAvatarStatus) {
       return [false, DeleteUserAvatarError.ErrorDeletingAvatar, null];
@@ -233,10 +226,8 @@ export class ProfileService {
     userId: number,
     awsObject: AWSObject,
   ): Promise<[boolean, CreateUserAvatarError, Avatar]> {
-    const [
-      findAvatarStatus,
-      findAvatarResponse,
-    ] = await this.userPackageService.findAvatar(userId);
+    const [findAvatarStatus, findAvatarResponse] =
+      await this.userPackageService.findAvatar(userId);
 
     if (!findAvatarStatus) {
       return [false, CreateUserAvatarError.FindAvatarError, null];
@@ -257,10 +248,8 @@ export class ProfileService {
 
     const { key, url } = awsObject;
 
-    const [
-      createAvatarStatus,
-      createAvatarResponse,
-    ] = await this.userPackageService.createAvatar(userId, key, url);
+    const [createAvatarStatus, createAvatarResponse] =
+      await this.userPackageService.createAvatar(userId, key, url);
 
     if (!createAvatarStatus) {
       return [false, CreateUserAvatarError.CreateAvatarError, null];

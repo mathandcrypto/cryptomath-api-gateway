@@ -4,12 +4,10 @@ import { Observable } from 'rxjs';
 import {
   SendRegisterNotifyRequest,
   SendRegisterNotifyResponse,
-} from 'cryptomath-api-message-types';
+} from '@cryptomath/cryptomath-api-message-types';
 
 @Injectable()
 export class MailerService {
-  private readonly logger = new Logger(MailerService.name);
-
   constructor(@Inject('MAILER_SERVICE') private client: ClientProxy) {}
 
   sendRegisterNotify(

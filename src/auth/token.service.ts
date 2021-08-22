@@ -79,13 +79,11 @@ export class TokenService {
 
     const { id: userId, secret: refreshSecret, sub } = payload;
 
-    const [
-      validateStatus,
-      validateResponse,
-    ] = await this.authPackageService.validateRefreshSession(
-      userId,
-      refreshSecret,
-    );
+    const [validateStatus, validateResponse] =
+      await this.authPackageService.validateRefreshSession(
+        userId,
+        refreshSecret,
+      );
 
     if (!validateStatus) {
       return [

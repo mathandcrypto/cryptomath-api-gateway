@@ -1,6 +1,6 @@
 import { IsEnum, IsOptional } from 'class-validator';
 import { SortOrder } from '@common/enums/sort-order.enum';
-import { ArticlesSortsQuery } from '../../../interfaces/articles-sorts-query.interface';
+import { ArticlesSortsQuery } from '../../../interfaces/query/articles-sorts.interface';
 
 export class ArticlesSortsQueryDTO implements ArticlesSortsQuery {
   @IsOptional()

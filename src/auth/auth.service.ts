@@ -24,10 +24,8 @@ export class AuthService {
     ip: string,
     userAgent: string,
   ): Promise<[boolean, LoginError, AuthLogin]> {
-    const [
-      validateStatus,
-      validateResponse,
-    ] = await this.userPackageService.findByEmailAndPassword(email, password);
+    const [validateStatus, validateResponse] =
+      await this.userPackageService.findByEmailAndPassword(email, password);
 
     if (!validateStatus) {
       return [false, LoginError.FindUserError, null];
@@ -43,14 +41,8 @@ export class AuthService {
 
     const { id: userId } = user;
 
-    const [
-      createSessionStatus,
-      createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(
-      userId,
-      ip,
-      userAgent,
-    );
+    const [createSessionStatus, createSessionResponse] =
+      await this.authPackageService.createAccessSession(userId, ip, userAgent);
 
     if (!createSessionStatus) {
       return [false, LoginError.CreateAccessSessionError, null];
@@ -73,10 +65,8 @@ export class AuthService {
   }
 
   async logout(userId: number): Promise<[boolean, LogoutError]> {
-    const [
-      deleteSessionsStatus,
-      deleteSessionsResponse,
-    ] = await this.authPackageService.deleteAllUserSessions(userId);
+    const [deleteSessionsStatus, deleteSessionsResponse] =
+      await this.authPackageService.deleteAllUserSessions(userId);
 
     if (!deleteSessionsStatus) {
       return [false, LogoutError.DeleteAllUserSessionsError];
@@ -97,13 +87,8 @@ export class AuthService {
     ip: string,
     userAgent: string,
   ): Promise<[boolean, RefreshError, AuthRefresh]> {
-    const [
-      deleteSessionStatus,
-      deleteSessionResponse,
-    ] = await this.authPackageService.deleteRefreshSession(
-      userId,
-      refreshSecret,
-    );
+    const [deleteSessionStatus, deleteSessionResponse] =
+      await this.authPackageService.deleteRefreshSession(userId, refreshSecret);
 
     if (!deleteSessionStatus) {
       return [false, RefreshError.DeleteRefreshSessionError, null];
@@ -115,14 +100,8 @@ export class AuthService {
       return [false, RefreshError.RefreshSessionNotDeleted, null];
     }
 
-    const [
-      createSessionStatus,
-      createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(
-      userId,
-      ip,
-      userAgent,
-    );
+    const [createSessionStatus, createSessionResponse] =
+      await this.authPackageService.createAccessSession(userId, ip, userAgent);
 
     if (!createSessionStatus) {
       return [false, RefreshError.CreateAccessSessionError, null];
@@ -149,10 +128,8 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<[boolean, RegisterError, AuthRegister]> {
-    const [
-      createStatus,
-      createResponse,
-    ] = await this.userPackageService.createUser(displayName, email, password);
+    const [createStatus, createResponse] =
+      await this.userPackageService.createUser(displayName, email, password);
 
     if (!createStatus) {
       return [false, RegisterError.CreateUserError, null];

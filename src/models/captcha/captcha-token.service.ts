@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { TaskPayload } from 'cryptomath-api-proto/types/captcha';
+import { TaskPayload } from '@cryptomath/cryptomath-api-proto/types/captcha';
 import { CaptchaConfigService } from '@config/captcha/config.service';
 import { DecodeJwtTokenError } from '@common/enums/errors/decode-jwt-token.enum';
 import { TokenExpiredError } from 'jsonwebtoken';
@@ -21,7 +21,7 @@ export class CaptchaTokenService {
   ): Promise<[boolean, DecodeJwtTokenError, TaskPayload]> {
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.captchaConfigService.captchaTokenSecret,
+        secret: this.captchaConfigService.tokenSecret,
       });
 
       return [true, null, payload];

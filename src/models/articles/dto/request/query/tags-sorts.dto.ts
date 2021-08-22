@@ -1,4 +1,4 @@
-import { TagsSortsQuery } from '../../../interfaces/tags-sorts-query.interface';
+import { TagsSortsQuery } from '../../../interfaces/query/tags-sorts.interface';
 import { IsEnum, IsOptional } from 'class-validator';
 import { SortOrder } from '@common/enums/sort-order.enum';
 

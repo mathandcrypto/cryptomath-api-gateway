@@ -1,7 +1,6 @@
-import { Tag } from 'cryptomath-api-proto/types/articles';
+import { Tag } from '@cryptomath/cryptomath-api-proto/types/articles';
+import { BaseList } from '@common/interfaces/response/base-list.interface';
 
-export interface TagsList {
+export interface TagsList extends BaseList {
   tags: Tag[];
-  limit: number;
-  total: number;
 }

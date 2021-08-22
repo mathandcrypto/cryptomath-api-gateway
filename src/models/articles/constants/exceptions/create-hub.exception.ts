@@ -11,4 +11,4 @@ export const CreateHubException = {
     code: 'unknown_create_hub_error',
     message: 'Unknown create hub error',
   },
-}
+};

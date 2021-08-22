@@ -67,10 +67,8 @@ export class ProfileController {
   async getProfile(
     @GetAuthUser() user: AuthUser,
   ): Promise<AuthUserProfileResponseDTO> {
-    const [
-      authUserProfileStatus,
-      authUserProfileResponse,
-    ] = await this.profileService.getAuthUserProfile(user);
+    const [authUserProfileStatus, authUserProfileResponse] =
+      await this.profileService.getAuthUserProfile(user);
 
     if (!authUserProfileStatus) {
       throw new InternalServerErrorException(
@@ -97,11 +95,8 @@ export class ProfileController {
   async uploadAvatar(
     @FastifyUploadedFile() multipart: Multipart,
   ): Promise<UploadAvatarResponseDTO> {
-    const [
-      uploadAvatarStatus,
-      uploadAvatarError,
-      uploadAvatarResponse,
-    ] = await this.profileService.uploadAvatar(multipart);
+    const [uploadAvatarStatus, uploadAvatarError, uploadAvatarResponse] =
+      await this.profileService.uploadAvatar(multipart);
 
     if (!uploadAvatarStatus) {
       switch (uploadAvatarError) {
@@ -141,11 +136,8 @@ export class ProfileController {
     @GetAuthUser() user: AuthUser,
     @Body() { key }: SaveAvatarRequestDTO,
   ): Promise<AvatarResponseDTO> {
-    const [
-      saveAvatarStatus,
-      saveAvatarError,
-      saveAvatarResponse,
-    ] = await this.profileService.saveAvatar(key);
+    const [saveAvatarStatus, saveAvatarError, saveAvatarResponse] =
+      await this.profileService.saveAvatar(key);
 
     if (!saveAvatarStatus) {
       switch (saveAvatarError) {
@@ -162,11 +154,8 @@ export class ProfileController {
       }
     }
 
-    const [
-      saveUserAvatarStatus,
-      saveUserAvatarError,
-      saveUserAvatarResponse,
-    ] = await this.profileService.createUserAvatar(user.id, saveAvatarResponse);
+    const [saveUserAvatarStatus, saveUserAvatarError, saveUserAvatarResponse] =
+      await this.profileService.createUserAvatar(user.id, saveAvatarResponse);
 
     if (!saveUserAvatarStatus) {
       switch (saveUserAvatarError) {
@@ -209,11 +198,8 @@ export class ProfileController {
     @GetAuthUser() user: AuthUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AvatarResponseDTO> {
-    const [
-      deleteUserStatus,
-      deleteUserError,
-      deleteUserResponse,
-    ] = await this.profileService.deleteUserAvatar(user.id, id);
+    const [deleteUserStatus, deleteUserError, deleteUserResponse] =
+      await this.profileService.deleteUserAvatar(user.id, id);
 
     if (!deleteUserStatus) {
       switch (deleteUserError) {

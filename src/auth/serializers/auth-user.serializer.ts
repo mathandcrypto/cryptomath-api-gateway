@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BaseSerializerService } from '@common/serializers/base.serializer';
-import { User } from 'cryptomath-api-proto/types/user';
+import { User } from '@cryptomath/cryptomath-api-proto/types/user';
 import { AuthUser } from '../interfaces/auth-user.interface';
 import { RoleSerializerService } from '@models/users/serializers/role.serializer';
 import { AvatarSerializerService } from '@models/users/serializers/avatar.serializer';

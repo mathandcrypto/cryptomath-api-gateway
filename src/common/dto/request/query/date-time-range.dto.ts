@@ -1,5 +1,5 @@
 import { IsDate, IsOptional } from 'class-validator';
-import { DateTimeRangeQuery } from '@common/interfaces/requests/query/date-time-range.interface';
+import { DateTimeRangeQuery } from '@common/interfaces/request/query/date-time-range.interface';
 
 export class DateTimeRangeQueryDTO implements DateTimeRangeQuery {
   @IsOptional()

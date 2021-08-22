@@ -29,10 +29,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate({ id, secret }: JwtPayload): Promise<AuthUser> {
-    const [
-      validateStatus,
-      validateAuthSessionResponse,
-    ] = await this.authPackageService.validateAccessSession(id, secret);
+    const [validateStatus, validateAuthSessionResponse] =
+      await this.authPackageService.validateAccessSession(id, secret);
 
     if (!validateStatus) {
       throw new InternalServerErrorException(
@@ -52,10 +50,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       );
     }
 
-    const [
-      findUserStatus,
-      findUserResponse,
-    ] = await this.userPackageService.findOne(id);
+    const [findUserStatus, findUserResponse] =
+      await this.userPackageService.findOne(id);
 
     if (!findUserStatus) {
       throw new InternalServerErrorException(

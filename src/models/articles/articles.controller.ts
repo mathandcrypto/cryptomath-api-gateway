@@ -22,7 +22,7 @@ export class ArticlesController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get a list of articles by the specified filters and sortings',
+    summary: 'Get a list of articles by the specified filters and sorts',
   })
   @ApiQuery({
     name: 'limit',
@@ -196,39 +196,36 @@ export class ArticlesController {
     {
       id,
       title,
-      user_id: userId,
+      user_id,
       hubs,
       tags,
       comments,
       rating,
-      created_at: createdAt,
+      created_at,
       sorts,
       offset,
       limit,
     }: GetArticlesQueryDTO,
   ): Promise<ArticlesListResponseDTO> {
-    const articlesFilters = this.articlesService.prepareFilters(
+    const articlesFilters = this.articlesService.prepareFilters({
       id,
       title,
-      userId,
+      user_id,
       hubs,
       tags,
       comments,
       rating,
-      createdAt,
-    );
+      created_at,
+    });
 
     const articlesSorts = this.articlesService.prepareSorts(sorts);
-    const [
-      findMultipleStatus,
-      findMultipleError,
-      findMultipleResponse,
-    ] = await this.articlesService.findMultiple(
-      articlesFilters,
-      articlesSorts,
-      offset,
-      limit,
-    );
+    const [findMultipleStatus, findMultipleError, findMultipleResponse] =
+      await this.articlesService.findMultiple(
+        articlesFilters,
+        articlesSorts,
+        offset,
+        limit,
+      );
 
     if (!findMultipleStatus) {
       switch (findMultipleError) {

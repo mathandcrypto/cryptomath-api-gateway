@@ -19,4 +19,4 @@ export const JwtStrategyException = {
     code: 'user_not_exists',
     message: 'User with this id does not exist',
   },
-}
+};

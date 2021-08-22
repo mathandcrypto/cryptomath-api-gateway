@@ -68,11 +68,8 @@ export class AuthController {
     @GetClientIP() ip: string,
     @GetClientUserAgent() userAgent: string,
   ): Promise<LoginResponseDTO> {
-    const [
-      loginStatus,
-      loginError,
-      loginResponse,
-    ] = await this.authService.login(email, password, ip, userAgent);
+    const [loginStatus, loginError, loginResponse] =
+      await this.authService.login(email, password, ip, userAgent);
 
     if (!loginStatus) {
       switch (loginError) {
@@ -133,11 +130,8 @@ export class AuthController {
     @GetClientIP() ip: string,
     @GetClientUserAgent() userAgent: string,
   ): Promise<LoginResponseDTO> {
-    const [
-      resolveStatus,
-      resolveError,
-      resolveResponse,
-    ] = await this.tokenService.resolveRefreshToken(refresh_token);
+    const [resolveStatus, resolveError, resolveResponse] =
+      await this.tokenService.resolveRefreshToken(refresh_token);
 
     if (!resolveStatus) {
       switch (resolveError) {
@@ -167,11 +161,8 @@ export class AuthController {
     }
 
     const { userId, refreshSecret, email } = resolveResponse;
-    const [
-      refreshStatus,
-      refreshError,
-      refreshResponse,
-    ] = await this.authService.refresh(userId, refreshSecret, ip, userAgent);
+    const [refreshStatus, refreshError, refreshResponse] =
+      await this.authService.refresh(userId, refreshSecret, ip, userAgent);
 
     if (!refreshStatus) {
       switch (refreshError) {
@@ -272,11 +263,8 @@ export class AuthController {
       password,
     }: RegisterRequestDTO,
   ): Promise<RegisterResponseDTO> {
-    const [
-      validateStatus,
-      validateErrorType,
-      isAnswerCorrect,
-    ] = await this.captchaService.validateAnswer(captchaToken, captchaAnswer);
+    const [validateStatus, validateErrorType, isAnswerCorrect] =
+      await this.captchaService.validateAnswer(captchaToken, captchaAnswer);
 
     if (!validateStatus) {
       switch (validateErrorType) {
@@ -299,11 +287,8 @@ export class AuthController {
       throw new ForbiddenException(RegisterException.WrongCaptchaAnswer);
     }
 
-    const [
-      registerStatus,
-      registerError,
-      registerResponse,
-    ] = await this.authService.register(displayName, email, password);
+    const [registerStatus, registerError, registerResponse] =
+      await this.authService.register(displayName, email, password);
 
     if (!registerStatus) {
       switch (registerError) {

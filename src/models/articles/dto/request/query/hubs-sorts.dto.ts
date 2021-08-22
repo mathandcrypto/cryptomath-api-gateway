@@ -1,4 +1,4 @@
-import { HubsSortsQuery } from '../../../interfaces/hubs-sorts-query.interface';
+import { HubsSortsQuery } from '../../../interfaces/query/hubs-sorts.interface';
 import { IsEnum, IsOptional } from 'class-validator';
 import { SortOrder } from '@common/enums/sort-order.enum';
 

@@ -29,10 +29,8 @@ import { AuthController } from './auth.controller';
       imports: [JwtConfigModule],
       inject: [JwtConfigService],
       useFactory: (jwtConfigService: JwtConfigService) => {
-        const {
-          accessTokenSecret,
-          accessTokenExpirationTime,
-        } = jwtConfigService;
+        const { accessTokenSecret, accessTokenExpirationTime } =
+          jwtConfigService;
 
         return {
           secret: accessTokenSecret,

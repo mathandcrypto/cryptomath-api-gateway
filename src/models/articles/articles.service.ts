@@ -3,10 +3,9 @@ import { ArticlesPackageService } from '@providers/grpc/articles/articles-packag
 import {
   ArticlesFilters,
   ArticlesSorts,
-} from 'cryptomath-api-proto/types/articles';
-import { NumericRangeQuery } from '@common/interfaces/requests/query/numeric-range.interface';
-import { DateTimeRangeQuery } from '@common/interfaces/requests/query/date-time-range.interface';
-import { ArticlesSortsQuery } from './interfaces/articles-sorts-query.interface';
+} from '@cryptomath/cryptomath-api-proto/types/articles';
+import { ArticlesFiltersQuery } from './interfaces/query/articles-filters.interface';
+import { ArticlesSortsQuery } from './interfaces/query/articles-sorts.interface';
 import { sortOrderToProto } from '@common/helpers/sorts';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
@@ -21,65 +20,71 @@ export class ArticlesService {
     private readonly userPackageService: UserPackageService,
   ) {}
 
-  prepareFilters(
-    id: number | undefined,
-    title: string | undefined,
-    userId: number | undefined,
-    hubs: number[] | undefined,
-    tags: number[] | undefined,
-    comments: NumericRangeQuery | undefined,
-    rating: NumericRangeQuery | undefined,
-    createdAt: DateTimeRangeQuery | undefined,
-  ): ArticlesFilters {
+  prepareFilters(filtersQuery: ArticlesFiltersQuery): ArticlesFilters {
     const filters = {} as ArticlesFilters;
 
-    if (id) {
-      filters.id = { id };
+    if (filtersQuery.id) {
+      filters.id = { id: filtersQuery.id };
     }
 
-    if (title) {
-      filters.title = { text: title };
+    if (filtersQuery.title) {
+      filters.title = { text: filtersQuery.title };
     }
 
-    if (userId) {
-      filters.user = { id: userId };
+    if (filtersQuery.user_id) {
+      filters.user = { id: filtersQuery.user_id };
     }
 
-    if (hubs) {
-      filters.hubs = { idList: hubs };
+    if (filtersQuery.hubs) {
+      filters.hubs = { idList: filtersQuery.hubs };
     }
 
-    if (tags) {
-      filters.tags = { idList: tags };
+    if (filtersQuery.tags) {
+      filters.tags = { idList: filtersQuery.tags };
     }
 
-    if (comments) {
+    if (filtersQuery.comments) {
+      const {
+        equals: commentsEquals,
+        min: commentsMin,
+        max: commentsMax,
+      } = filtersQuery.comments;
+
       filters.comments = {
-        equals: comments.equals,
-        min: comments.min,
-        max: comments.max,
+        equals: commentsEquals,
+        min: commentsMin,
+        max: commentsMax,
       };
     }
 
-    if (rating) {
+    if (filtersQuery.rating) {
+      const {
+        equals: ratingEquals,
+        min: ratingMin,
+        max: ratingMax,
+      } = filtersQuery.rating;
+
       filters.rating = {
-        equals: rating.equals,
-        min: rating.min,
-        max: rating.max,
+        equals: ratingEquals,
+        min: ratingMin,
+        max: ratingMax,
       };
     }
 
-    if (createdAt) {
+    if (filtersQuery.created_at) {
+      const { start: createdAfter, end: createdBefore } =
+        filtersQuery.created_at;
+
       filters.createdAt = {
-        start: createdAt.start ? getUnixTime(createdAt.start) : undefined,
-        end: createdAt.end ? getUnixTime(createdAt.end) : undefined,
+        start: createdAfter ? getUnixTime(createdAfter) : undefined,
+        end: createdBefore ? getUnixTime(createdBefore) : undefined,
       };
     }
 
     return filters;
   }
 
-  prepareSorts(sortsQuery: ArticlesSortsQuery | undefined): ArticlesSorts {
+  prepareSorts(sortsQuery?: ArticlesSortsQuery): ArticlesSorts {
     const sorts = {} as ArticlesSorts;
 
     if (sortsQuery) {
@@ -111,15 +116,13 @@ export class ArticlesService {
     offset = 0,
     limit = 30,
   ): Promise<[boolean, FindMultipleError, ArticlesList]> {
-    const [
-      findArticlesStatus,
-      findArticlesResponse,
-    ] = await this.articlesPackageService.findArticles(
-      filters,
-      sorts,
-      offset,
-      limit,
-    );
+    const [findArticlesStatus, findArticlesResponse] =
+      await this.articlesPackageService.findArticles(
+        filters,
+        sorts,
+        offset,
+        limit,
+      );
 
     if (!findArticlesStatus) {
       return [false, FindMultipleError.FindArticlesError, null];
@@ -148,12 +151,10 @@ export class ArticlesService {
       ];
     }
 
-    const [
-      findUsersStatus,
-      findUsersResponse,
-    ] = await this.userPackageService.findFromList(
-      articles.map((article) => article.userId),
-    );
+    const [findUsersStatus, findUsersResponse] =
+      await this.userPackageService.findFromList(
+        articles.map((article) => article.userId),
+      );
 
     if (!findUsersStatus) {
       return [false, FindMultipleError.FindUsersError, null];

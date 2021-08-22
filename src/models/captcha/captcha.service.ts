@@ -15,22 +15,17 @@ export class CaptchaService {
     token: string,
     answer: number,
   ): Promise<[boolean, ValidateAnswerError | DecodeJwtTokenError, boolean]> {
-    const [
-      decodeStatus,
-      errorType,
-      payload,
-    ] = await this.captchaTokenService.decodeCaptchaToken(token);
+    const [decodeStatus, errorType, payload] =
+      await this.captchaTokenService.decodeCaptchaToken(token);
 
     if (!decodeStatus) {
       return [false, errorType, false];
     }
 
-    const { uuid, params } = payload;
+    const { uuid } = payload;
 
-    const [
-      validateStatus,
-      validateResponse,
-    ] = await this.captchaPackageService.validateTask(uuid, params, answer);
+    const [validateStatus, validateResponse] =
+      await this.captchaPackageService.validateTask(uuid, answer);
 
     if (!validateStatus) {
       return [false, ValidateAnswerError.ValidateTaskError, false];

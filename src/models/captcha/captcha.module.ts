@@ -14,14 +14,11 @@ import { CaptchaController } from './captcha.controller';
       imports: [CaptchaConfigModule],
       inject: [CaptchaConfigService],
       useFactory: (captchaConfigService: CaptchaConfigService) => {
-        const {
-          captchaTokenSecret,
-          captchaTokenExpirationTime,
-        } = captchaConfigService;
+        const { tokenSecret, tokenExpirationTime } = captchaConfigService;
 
         return {
-          secret: captchaTokenSecret,
-          signOptions: { expiresIn: captchaTokenExpirationTime },
+          secret: tokenSecret,
+          signOptions: { expiresIn: tokenExpirationTime },
         };
       },
     }),

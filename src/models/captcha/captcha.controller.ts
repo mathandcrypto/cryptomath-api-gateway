@@ -28,10 +28,8 @@ export class CaptchaController {
     description: 'Generated captcha task data',
   })
   async generateCaptcha(): Promise<CaptchaGenerateResponseDTO> {
-    const [
-      generateStatus,
-      generateResponse,
-    ] = await this.captchaPackageService.generateTask();
+    const [generateStatus, generateResponse] =
+      await this.captchaPackageService.generateTask();
 
     if (!generateStatus) {
       throw new InternalServerErrorException(

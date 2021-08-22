@@ -1,5 +1,5 @@
 import { IsInt, IsOptional } from 'class-validator';
-import { NumericRangeQuery } from '@common/interfaces/requests/query/numeric-range.interface';
+import { NumericRangeQuery } from '@common/interfaces/request/query/numeric-range.interface';
 
 export class NumericIntRangeQueryDTO implements NumericRangeQuery {
   @IsOptional()

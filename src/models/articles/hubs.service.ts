@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { ArticlesPackageService } from '@providers/grpc/articles/articles-package.service';
-import { NumericRangeQuery } from '@common/interfaces/requests/query/numeric-range.interface';
+import { HubsPackageService } from '@providers/grpc/articles/hubs-package.service';
 import {
   Hub,
   HubsFilters,
   HubsSorts,
-} from 'cryptomath-api-proto/types/articles';
-import { HubsSortsQuery } from './interfaces/hubs-sorts-query.interface';
+} from '@cryptomath/cryptomath-api-proto/types/articles';
+import { HubsFiltersQuery } from './interfaces/query/hubs-filters.interface';
+import { HubsSortsQuery } from './interfaces/query/hubs-sorts.interface';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { HubsList } from './interfaces/hubs-list.interface';
 import { FindOneError } from './enums/errors/find-one.enum';
@@ -15,51 +15,55 @@ import { sortOrderToProto } from '@common/helpers/sorts';
 
 @Injectable()
 export class HubsService {
-  constructor(
-    private readonly articlesPackageService: ArticlesPackageService,
-  ) {}
+  constructor(private readonly hubsPackageService: HubsPackageService) {}
 
-  prepareFilters(
-    id: number | undefined,
-    name: string | undefined,
-    tagsList: number[] | undefined,
-    articles: NumericRangeQuery | undefined,
-    tags: NumericRangeQuery | undefined,
-  ): HubsFilters {
+  prepareFilters(filtersQuery: HubsFiltersQuery): HubsFilters {
     const filters = {} as HubsFilters;
 
-    if (id) {
-      filters.id = { id };
+    if (filtersQuery.id) {
+      filters.id = { id: filtersQuery.id };
     }
 
-    if (name) {
-      filters.name = { text: name };
+    if (filtersQuery.name) {
+      filters.name = { text: filtersQuery.name };
     }
 
-    if (tagsList) {
-      filters.tagsList = { idList: tagsList };
+    if (filtersQuery.tags_list) {
+      filters.tagsList = { idList: filtersQuery.tags_list };
     }
 
-    if (articles) {
+    if (filtersQuery.articles) {
+      const {
+        equals: articlesEquals,
+        min: articlesMin,
+        max: articlesMax,
+      } = filtersQuery.articles;
+
       filters.articles = {
-        equals: articles.equals,
-        min: articles.min,
-        max: articles.max,
+        equals: articlesEquals,
+        min: articlesMin,
+        max: articlesMax,
       };
     }
 
-    if (tags) {
+    if (filtersQuery.tags) {
+      const {
+        equals: tagsEquals,
+        min: tagsMin,
+        max: tagsMax,
+      } = filtersQuery.tags;
+
       filters.tags = {
-        equals: tags.equals,
-        min: tags.min,
-        max: tags.max,
+        equals: tagsEquals,
+        min: tagsMin,
+        max: tagsMax,
       };
     }
 
     return filters;
   }
 
-  prepareSorts(sortsQuery: HubsSortsQuery | undefined): HubsSorts {
+  prepareSorts(sortsQuery?: HubsSortsQuery): HubsSorts {
     const sorts = {} as HubsSorts;
 
     if (sortsQuery) {
@@ -85,15 +89,8 @@ export class HubsService {
     offset = 0,
     limit = 30,
   ): Promise<[boolean, FindMultipleError, HubsList]> {
-    const [
-      findHubsStatus,
-      findHubsResponse,
-    ] = await this.articlesPackageService.findHubs(
-      filters,
-      sorts,
-      offset,
-      limit,
-    );
+    const [findHubsStatus, findHubsResponse] =
+      await this.hubsPackageService.findHubs(filters, sorts, offset, limit);
 
     if (!findHubsStatus) {
       return [false, FindMultipleError.FindHubsError, null];
@@ -117,10 +114,8 @@ export class HubsService {
   }
 
   async findOne(hubId: number): Promise<[boolean, FindOneError, Hub]> {
-    const [
-      findHubStatus,
-      findHubResponse,
-    ] = await this.articlesPackageService.findHub(hubId);
+    const [findHubStatus, findHubResponse] =
+      await this.hubsPackageService.findHub(hubId);
 
     if (!findHubStatus) {
       return [false, FindOneError.FindHubError, null];
@@ -139,10 +134,8 @@ export class HubsService {
     name: string,
     description: string,
   ): Promise<[boolean, CreateHubError, Hub]> {
-    const [
-      createHubStatus,
-      createHubResponse,
-    ] = await this.articlesPackageService.createHub(name, description);
+    const [createHubStatus, createHubResponse] =
+      await this.hubsPackageService.createHub(name, description);
 
     if (!createHubStatus) {
       return [false, CreateHubError.CreateHubError, null];

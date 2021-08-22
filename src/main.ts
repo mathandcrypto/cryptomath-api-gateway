@@ -13,7 +13,7 @@ function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('CryptoMath API')
     .setDescription('Public API for CryptoMath services')
-    .setVersion('0.0.1')
+    .setVersion('1.0.0')
     .addBasicAuth()
     .addBearerAuth()
     .build();

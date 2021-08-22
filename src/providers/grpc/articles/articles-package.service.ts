@@ -6,17 +6,9 @@ import {
   ArticlesFilters,
   ArticlesSorts,
   FindArticlesResponse,
-  HubsFilters,
-  HubsSorts,
-  FindHubsResponse,
-  TagsFilters,
-  TagsSorts,
-  FindTagsResponse,
-  FindHubResponse,
-  FindTagResponse,
-  CreateHubResponse,
-} from 'cryptomath-api-proto/types/articles';
+} from '@cryptomath/cryptomath-api-proto/types/articles';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ArticlesPackageService implements OnModuleInit {
@@ -38,88 +30,13 @@ export class ArticlesPackageService implements OnModuleInit {
     limit: number,
   ): Promise<[boolean, FindArticlesResponse]> {
     try {
-      const response = await this.client
-        .findArticles({ filters, sorts, offset, limit })
-        .toPromise();
-
-      return [true, response];
-    } catch (error) {
-      this.logger.error(error);
-
-      return [false, null];
-    }
-  }
-
-  async findHubs(
-    filters: HubsFilters,
-    sorts: HubsSorts,
-    offset: number,
-    limit: number,
-  ): Promise<[boolean, FindHubsResponse]> {
-    try {
-      const response = await this.client
-        .findHubs({ filters, sorts, offset, limit })
-        .toPromise();
-
-      return [true, response];
-    } catch (error) {
-      this.logger.error(error);
-
-      return [false, null];
-    }
-  }
-
-  async findTags(
-    filters: TagsFilters,
-    sorts: TagsSorts,
-    offset: number,
-    limit: number,
-  ): Promise<[boolean, FindTagsResponse]> {
-    try {
-      const response = await this.client
-        .findTags({ filters, sorts, offset, limit })
-        .toPromise();
-
-      return [true, response];
-    } catch (error) {
-      this.logger.error(error);
-
-      return [false, null];
-    }
-  }
-
-  async findHub(hubId: number): Promise<[boolean, FindHubResponse]> {
-    try {
-      const response = await this.client.findHub({ hubId }).toPromise();
-
-      return [true, response];
-    } catch (error) {
-      this.logger.error(error);
-
-      return [false, null];
-    }
-  }
-
-  async findTag(tagId: number): Promise<[boolean, FindTagResponse]> {
-    try {
-      const response = await this.client.findTag({ tagId }).toPromise();
-
-      return [true, response];
-    } catch (error) {
-      this.logger.error(error);
-
-      return [false, null];
-    }
-  }
-
-  async createHub(
-    name: string,
-    description: string,
-  ): Promise<[boolean, CreateHubResponse]> {
-    try {
-      const response = await this.client
-        .creteHub({ name, description })
-        .toPromise();
+      const observable = this.client.findArticles({
+        filters,
+        sorts,
+        offset,
+        limit,
+      });
+      const response = await firstValueFrom<FindArticlesResponse>(observable);
 
       return [true, response];
     } catch (error) {

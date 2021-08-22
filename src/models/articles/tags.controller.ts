@@ -1,10 +1,14 @@
 import {
+  Body,
   Controller,
   Get,
+  HttpCode,
   InternalServerErrorException,
   Param,
   ParseIntPipe,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { TagSerializerService } from './serializers/tag.serializer';
@@ -15,7 +19,16 @@ import { GetTagsException } from './constants/exceptions/get-tags.exception';
 import { TagResponseDTO } from './dto/response/tag.dto';
 import { FindOneError } from './enums/errors/find-one.enum';
 import { GetTagException } from './constants/exceptions/get-tag.exception';
+import { CreateTagRequestDTO } from './dto/request/create-tag.dto';
+import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { Role } from '@common/enums/role.enum';
+import { CreateTagError } from './enums/errors/create-tag.error';
+import { CreateTagException } from './constants/exceptions/create-tag.exception';
 import {
+  ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -33,7 +46,7 @@ export class TagsController {
 
   @Get()
   @ApiOperation({
-    summary: 'Get a list of tags by the specified filters and sortings',
+    summary: 'Get a list of tags by the specified filters and sorts',
   })
   @ApiQuery({
     name: 'articles',
@@ -84,33 +97,22 @@ export class TagsController {
   })
   async getTags(
     @Query()
-    {
-      id,
-      name,
-      hub_id: hubId,
-      articles,
-      sorts,
-      offset,
-      limit,
-    }: GetTagsQueryDTO,
+    { id, name, hub_id, articles, sorts, offset, limit }: GetTagsQueryDTO,
   ): Promise<TagsListResponseDTO> {
-    const tagsFilters = this.tagsService.prepareFilters(
+    const tagsFilters = this.tagsService.prepareFilters({
       id,
       name,
-      hubId,
+      hub_id,
       articles,
-    );
+    });
     const tagsSorts = this.tagsService.prepareSorts(sorts);
-    const [
-      findMultipleStatus,
-      findMultipleError,
-      findMultipleResponse,
-    ] = await this.tagsService.findMultiple(
-      tagsFilters,
-      tagsSorts,
-      offset,
-      limit,
-    );
+    const [findMultipleStatus, findMultipleError, findMultipleResponse] =
+      await this.tagsService.findMultiple(
+        tagsFilters,
+        tagsSorts,
+        offset,
+        limit,
+      );
 
     if (!findMultipleStatus) {
       switch (findMultipleError) {
@@ -159,6 +161,47 @@ export class TagsController {
         default:
           throw new InternalServerErrorException(
             GetTagException.UnknownGetTagError,
+          );
+      }
+    }
+
+    return await this.tagSerializerService.serialize(tag);
+  }
+
+  @Post()
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Create a new tag',
+    description: 'Available only to administrators and moderators',
+  })
+  @ApiBearerAuth()
+  @ApiBody({ type: CreateTagRequestDTO })
+  @ApiResponse({
+    status: 200,
+    type: TagResponseDTO,
+    description: 'Tag data',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin, Role.Moderator)
+  async createTag(
+    @Body() { hub_id: hubId, name, description }: CreateTagRequestDTO,
+  ): Promise<TagResponseDTO> {
+    const [createTagStatus, createTagError, tag] =
+      await this.tagsService.createTag(hubId, name, description);
+
+    if (!createTagStatus) {
+      switch (createTagError) {
+        case CreateTagError.CreateTagError:
+          throw new InternalServerErrorException(
+            CreateTagException.CreateTagError,
+          );
+        case CreateTagError.TagNotCreated:
+          throw new InternalServerErrorException(
+            CreateTagException.TagNotCreated,
+          );
+        default:
+          throw new InternalServerErrorException(
+            CreateTagException.UnknownCreateTagError,
           );
       }
     }

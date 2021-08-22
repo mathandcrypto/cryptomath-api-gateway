@@ -1,0 +1,65 @@
+version: '3.9'
+services:
+  dev:
+    container_name: cryptomath-gateway-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run start:dev
+    ports:
+      - '5000:5000'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    env_file:
+      - .env
+  prod:
+    container_name: cryptomath-gateway-prod
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - '5000:5000'
+    env_file:
+      - .env
+  nginx:
+    image: nginx:alpine
+    container_name: cryptomath-gateway-nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - web-root:/usr/src/app
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    networks:
+      - cryptomath-gateway
+    depends_on:
+      - prod
+  certbot:
+    image: certbot/certbot
+    container_name: cryptomath-gateway-certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+    depends_on:
+      - nginx
+    command: certonly --webroot --webroot-path=/var/www/html --email admin@cryptomath.xyz --agree-tos --no-eff-email --staging -d api.cryptomath.xyz  -d www.api.cryptomath.xyz
+volumes:
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+    driver_opts:
+    type: none
+    device: /usr/src/app
+    o: bind
+networks:
+  cryptomath-gateway:
+    driver: bridge
