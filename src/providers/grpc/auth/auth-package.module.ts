@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthConfigModule } from '@config/auth/config.module';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { AUTH_PACKAGE_NAME } from 'cryptomath-api-proto/types/auth';
+import { AUTH_PACKAGE_NAME } from '@cryptomath/cryptomath-api-proto/types/auth';
 import { AuthConfigService } from '@config/auth/config.service';
 import { AuthPackageService } from './auth-package.service';
 import { join } from 'path';
@@ -21,7 +21,7 @@ import { join } from 'path';
             package: AUTH_PACKAGE_NAME,
             protoPath: join(
               process.cwd(),
-              'node_modules/cryptomath-api-proto/proto',
+              'node_modules/@cryptomath/cryptomath-api-proto/proto',
               protoFile,
             ),
             url,

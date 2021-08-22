@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { UserConfigModule } from '@config/user/config.module';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { USER_PACKAGE_NAME } from 'cryptomath-api-proto/types/user';
+import { USER_PACKAGE_NAME } from '@cryptomath/cryptomath-api-proto/types/user';
 import { UserConfigService } from '@config/user/config.service';
 import { UserPackageService } from './user-package.service';
 import { join } from 'path';
@@ -21,7 +21,7 @@ import { join } from 'path';
             package: USER_PACKAGE_NAME,
             protoPath: join(
               process.cwd(),
-              'node_modules/cryptomath-api-proto/proto',
+              'node_modules/@cryptomath/cryptomath-api-proto/proto',
               protoFile,
             ),
             url,

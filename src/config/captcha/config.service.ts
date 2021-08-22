@@ -13,11 +13,11 @@ export class CaptchaConfigService {
     return this.configService.get<string>('captcha.url');
   }
 
-  get captchaTokenSecret(): string {
-    return this.configService.get<string>('captcha.captchaTokenSecret');
+  get tokenSecret(): string {
+    return this.configService.get<string>('captcha.tokenSecret');
   }
 
-  get captchaTokenExpirationTime(): string {
-    return this.configService.get<string>('captcha.captchaTokenExpirationTime');
+  get tokenExpirationTime(): string {
+    return this.configService.get<string>('captcha.tokenExpirationTime');
   }
 }

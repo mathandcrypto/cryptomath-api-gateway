@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { MailerService } from '@providers/rmq/mailer/mailer.service';
-import { LoginError } from './enums/login-error.enum';
-import { LogoutError } from './enums/logout-error.enum';
-import { RefreshError } from './enums/refresh-error.enum';
-import { RegisterError } from './enums/register-error.enum';
-import { LoginResponse } from './interfaces/login-response.interface';
-import { RefreshResponse } from './interfaces/refresh-response.interface';
-import { RegisterResponse } from './interfaces/register-response.interface';
+import { LoginError } from './enums/errors/login.enum';
+import { LogoutError } from './enums/errors/logout.enum';
+import { RefreshError } from './enums/errors/refresh.enum';
+import { RegisterError } from './enums/errors/register.enum';
+import { AuthLogin } from './interfaces/login.interface';
+import { AuthRefresh } from './interfaces/refresh.interface';
+import { AuthRegister } from './interfaces/register.interface';
 
 @Injectable()
 export class AuthService {
@@ -21,11 +21,11 @@ export class AuthService {
   async login(
     email: string,
     password: string,
-  ): Promise<[boolean, LoginError, LoginResponse]> {
-    const [
-      validateStatus,
-      validateResponse,
-    ] = await this.userPackageService.findByEmailAndPassword(email, password);
+    ip: string,
+    userAgent: string,
+  ): Promise<[boolean, LoginError, AuthLogin]> {
+    const [validateStatus, validateResponse] =
+      await this.userPackageService.findByEmailAndPassword(email, password);
 
     if (!validateStatus) {
       return [false, LoginError.FindUserError, null];
@@ -41,10 +41,8 @@ export class AuthService {
 
     const { id: userId } = user;
 
-    const [
-      createSessionStatus,
-      createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(userId);
+    const [createSessionStatus, createSessionResponse] =
+      await this.authPackageService.createAccessSession(userId, ip, userAgent);
 
     if (!createSessionStatus) {
       return [false, LoginError.CreateAccessSessionError, null];
@@ -67,10 +65,8 @@ export class AuthService {
   }
 
   async logout(userId: number): Promise<[boolean, LogoutError]> {
-    const [
-      deleteSessionsStatus,
-      deleteSessionsResponse,
-    ] = await this.authPackageService.deleteAllUserSessions(userId);
+    const [deleteSessionsStatus, deleteSessionsResponse] =
+      await this.authPackageService.deleteAllUserSessions(userId);
 
     if (!deleteSessionsStatus) {
       return [false, LogoutError.DeleteAllUserSessionsError];
@@ -88,14 +84,11 @@ export class AuthService {
   async refresh(
     userId: number,
     refreshSecret: string,
-  ): Promise<[boolean, RefreshError, RefreshResponse]> {
-    const [
-      deleteSessionStatus,
-      deleteSessionResponse,
-    ] = await this.authPackageService.deleteRefreshSession(
-      userId,
-      refreshSecret,
-    );
+    ip: string,
+    userAgent: string,
+  ): Promise<[boolean, RefreshError, AuthRefresh]> {
+    const [deleteSessionStatus, deleteSessionResponse] =
+      await this.authPackageService.deleteRefreshSession(userId, refreshSecret);
 
     if (!deleteSessionStatus) {
       return [false, RefreshError.DeleteRefreshSessionError, null];
@@ -107,10 +100,8 @@ export class AuthService {
       return [false, RefreshError.RefreshSessionNotDeleted, null];
     }
 
-    const [
-      createSessionStatus,
-      createSessionResponse,
-    ] = await this.authPackageService.createAccessSession(userId);
+    const [createSessionStatus, createSessionResponse] =
+      await this.authPackageService.createAccessSession(userId, ip, userAgent);
 
     if (!createSessionStatus) {
       return [false, RefreshError.CreateAccessSessionError, null];
@@ -136,11 +127,9 @@ export class AuthService {
     displayName: string,
     email: string,
     password: string,
-  ): Promise<[boolean, RegisterError, RegisterResponse]> {
-    const [
-      createStatus,
-      createResponse,
-    ] = await this.userPackageService.createUser(displayName, email, password);
+  ): Promise<[boolean, RegisterError, AuthRegister]> {
+    const [createStatus, createResponse] =
+      await this.userPackageService.createUser(displayName, email, password);
 
     if (!createStatus) {
       return [false, RegisterError.CreateUserError, null];
@@ -156,16 +145,7 @@ export class AuthService {
 
     const { id, confirmCode } = createdUser;
 
-    const [sendMailStatus] = this.mailerService.sendRegisterNotify(
-      id,
-      email,
-      displayName,
-      confirmCode,
-    );
-
-    if (!sendMailStatus) {
-      return [false, RegisterError.SentNotifyMailError, null];
-    }
+    this.mailerService.sendRegisterNotify(id, email, displayName, confirmCode);
 
     return [true, null, { userId: id }];
   }

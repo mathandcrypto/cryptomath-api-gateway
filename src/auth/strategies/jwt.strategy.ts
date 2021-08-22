@@ -9,6 +9,9 @@ import { JwtConfigService } from '@config/jwt/config.service';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { AuthPackageService } from '@providers/grpc/auth/auth-package.service';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
+import { AuthUserSerializerService } from '../serializers/auth-user.serializer';
+import { AuthUser } from '../interfaces/auth-user.interface';
+import { JwtStrategyException } from '../constants/exceptions/jwt-strategy.exception';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,6 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly jwtConfigService: JwtConfigService,
     private readonly authPackageService: AuthPackageService,
     private readonly userPackageService: UserPackageService,
+    private readonly authUserSerializerService: AuthUserSerializerService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -24,15 +28,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate({ id, secret }: JwtPayload) {
-    const [
-      validateStatus,
-      validateAuthSessionResponse,
-    ] = await this.authPackageService.validateAccessSession(id, secret);
+  async validate({ id, secret }: JwtPayload): Promise<AuthUser> {
+    const [validateStatus, validateAuthSessionResponse] =
+      await this.authPackageService.validateAccessSession(id, secret);
 
     if (!validateStatus) {
       throw new InternalServerErrorException(
-        'Error requesting the auth service',
+        JwtStrategyException.ValidateAccessSessionError,
       );
     }
 
@@ -40,29 +42,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!isSessionExists) {
       throw new UnauthorizedException(
-        'Auth session with this user id and secret was not found',
+        JwtStrategyException.AccessSessionNotExists,
       );
     } else if (isSessionExpired) {
-      throw new UnauthorizedException('Auth session expired');
+      throw new UnauthorizedException(
+        JwtStrategyException.AccessSessionExpired,
+      );
     }
 
-    const [
-      findUserStatus,
-      findUserResponse,
-    ] = await this.userPackageService.findOne(id);
+    const [findUserStatus, findUserResponse] =
+      await this.userPackageService.findOne(id);
 
     if (!findUserStatus) {
       throw new InternalServerErrorException(
-        'Error requesting the user service',
+        JwtStrategyException.FindUserError,
       );
     }
 
     const { isUserExists, user } = findUserResponse;
 
     if (!isUserExists) {
-      throw new UnauthorizedException('User with this id does not exist');
+      throw new UnauthorizedException(JwtStrategyException.UserNotExists);
     }
 
-    return { id: user.id, email: user.email };
+    return await this.authUserSerializerService.serialize(user);
   }
 }

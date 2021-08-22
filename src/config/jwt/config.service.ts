@@ -10,7 +10,7 @@ export class JwtConfigService {
   }
 
   get accessTokenExpirationTime(): string {
-    return this.configService.get<string>('jwt.accessTokenExpirationTime')
+    return this.configService.get<string>('jwt.accessTokenExpirationTime');
   }
 
   get refreshTokenSecret(): string {
@@ -18,6 +18,6 @@ export class JwtConfigService {
   }
 
   get refreshTokenExpirationTime(): string {
-    return this.configService.get<string>('jwt.refreshTokenExpirationTime')
+    return this.configService.get<string>('jwt.refreshTokenExpirationTime');
   }
 }

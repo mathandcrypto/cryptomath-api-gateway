@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { AuthUserSerializerService } from './serializers/auth-user.serializer';
 import { AuthController } from './auth.controller';
 
 @Module({
@@ -28,10 +29,8 @@ import { AuthController } from './auth.controller';
       imports: [JwtConfigModule],
       inject: [JwtConfigService],
       useFactory: (jwtConfigService: JwtConfigService) => {
-        const {
-          accessTokenSecret,
-          accessTokenExpirationTime,
-        } = jwtConfigService;
+        const { accessTokenSecret, accessTokenExpirationTime } =
+          jwtConfigService;
 
         return {
           secret: accessTokenSecret,
@@ -43,7 +42,13 @@ import { AuthController } from './auth.controller';
     AuthPackageModule,
     MailerModule,
   ],
-  providers: [AuthService, TokenService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    TokenService,
+    LocalStrategy,
+    JwtStrategy,
+    AuthUserSerializerService,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}
