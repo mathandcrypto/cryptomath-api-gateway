@@ -3,6 +3,10 @@ export const SaveAvatarException = {
     code: 'invalid_object_key',
     message: 'Invalid object key',
   },
+  InvalidObjectUser: {
+    code: 'invalid_object_user',
+    message: 'Invalid object user',
+  },
   SaveToStorageError: {
     code: 'save_to_storage_error',
     message: 'Error saving avatar to storage',

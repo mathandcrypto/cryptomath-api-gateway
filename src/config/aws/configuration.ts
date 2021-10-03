@@ -6,5 +6,6 @@ export default registerAs<AwsConfig>('aws', () => ({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   userAssetsBucketName: process.env.AWS_USER_ASSETS_BUCKET_NAME,
+  hubsAssetsBucketName: process.env.AWS_HUBS_ASSETS_BUCKET_NAME,
   tmpObjectsPrefix: process.env.AWS_TMP_OBJECTS_PREFIX,
 }));

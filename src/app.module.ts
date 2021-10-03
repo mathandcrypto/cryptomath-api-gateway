@@ -6,6 +6,7 @@ import { UsersModule } from '@models/users/users.module';
 import { ProfileModule } from '@models/profile/profile.module';
 import { ArticlesModule } from '@models/articles/articles.module';
 import { SearchModule } from '@models/search/search.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -17,5 +18,6 @@ import { SearchModule } from '@models/search/search.module';
     ArticlesModule,
     SearchModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}

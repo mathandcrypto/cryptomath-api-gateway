@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UserPackageService } from '@providers/grpc/user/user-package.service';
 import { AuthUser } from '@auth/interfaces/auth-user.interface';
 import { AuthUserProfile } from './interfaces/auth-user-profile.interface';
 import { GetUserProfileError } from './enums/errors/get-user-profile.enum';
 import { UserProfile } from './interfaces/user-profile.interface';
+import { ExtractAvatarOptions } from './interfaces/extract-avatar-options.interface';
 import { InjectAwsService } from 'nest-aws-sdk';
 import { S3 } from 'aws-sdk';
 import { Multipart } from 'fastify-multipart';
@@ -12,12 +13,12 @@ import { SaveAvatarError } from './enums/errors/save-avatar.enum';
 import { CreateUserAvatarError } from './enums/errors/create-user-avatar.enum';
 import { DeleteUserAvatarError } from './enums/errors/delete-user-avatar.enum';
 import { Avatar } from '@cryptomath/cryptomath-api-proto/types/user';
-import { ImageStorage } from '@common/shared/storage/adapters/image-storage.adapter';
+import { ImageStorage } from '@common/shared/storage/image-storage.adapter';
 import { StorageException } from '@common/shared/storage/exceptions/storage.exception';
 import { AWSConfigService } from '@config/aws/config.service';
 import { AWSObject } from '@common/interfaces/aws-object.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { extname } from 'path';
+import { createReadStream } from 'fs';
 
 @Injectable()
 export class ProfileService {
@@ -26,7 +27,6 @@ export class ProfileService {
   constructor(
     private readonly userPackageService: UserPackageService,
     private readonly awsConfigService: AWSConfigService,
-    @Inject('IMAGE_STORAGE') private readonly imageStorage: ImageStorage,
     @InjectAwsService(S3) private readonly s3: S3,
   ) {}
 
@@ -89,25 +89,36 @@ export class ProfileService {
   }
 
   async uploadAvatar(
+    userId: number,
     multipart: Multipart,
   ): Promise<[boolean, UploadAvatarError, AWSObject]> {
-    this.imageStorage.setMultipart(multipart);
+    const imageStorage = new ImageStorage(multipart.file, {
+      allowedFormats: ['png', 'jpeg'],
+      maxSize: 200 * 1000,
+    });
+    const filePath = await imageStorage.init();
 
-    if (!this.imageStorage.isImageFile) {
+    if (!imageStorage.isValidImageFile) {
       return [false, UploadAvatarError.InvalidImageFile, null];
     }
 
-    this.imageStorage.setOptions({ width: 200, height: 200 });
+    if (!imageStorage.isValidImageFileSize) {
+      return [false, UploadAvatarError.InvalidImageFileSize, null];
+    }
+
+    if (!imageStorage.isValidImageSize) {
+      return [false, UploadAvatarError.InvalidImageSize, null];
+    }
 
     try {
-      const fileStream = await this.imageStorage.getStream();
+      const fileStream = createReadStream(filePath);
 
       fileStream.on('error', () => {
-        return [false, UploadAvatarError.ReadResizedFileError, null];
+        return [false, UploadAvatarError.ReadTempFileError, null];
       });
 
-      const awsKey = `${this.awsConfigService.tmpObjectsPrefix}_${uuidv4()}${
-        this.imageStorage.fileExtension
+      const awsKey = `${this.awsConfigService.tmpObjectsPrefix}_${uuidv4()}.${
+        imageStorage.imageExtension
       }`;
       const uploadResult = await this.s3
         .upload({
@@ -115,6 +126,10 @@ export class ProfileService {
           Body: fileStream,
           Key: awsKey,
           ACL: 'public-read',
+          Metadata: {
+            source: 'tmp_profile_avatar',
+            user: String(userId),
+          },
         })
         .promise();
 
@@ -131,7 +146,7 @@ export class ProfileService {
       this.logger.error(error);
 
       if (error instanceof StorageException) {
-        return [false, UploadAvatarError.ResizeFileError, null];
+        return [false, UploadAvatarError.SaveTempFileError, null];
       }
 
       return [false, UploadAvatarError.UploadToAWSError, null];
@@ -139,6 +154,8 @@ export class ProfileService {
   }
 
   async saveAvatar(
+    userId: number,
+    extractOptions: ExtractAvatarOptions,
     tmpKey: string,
   ): Promise<[boolean, SaveAvatarError, AWSObject]> {
     if (!tmpKey.startsWith(this.awsConfigService.tmpObjectsPrefix)) {
@@ -148,20 +165,61 @@ export class ProfileService {
     const { userAssetsBucketName } = this.awsConfigService;
 
     try {
-      await this.s3
+      const { Metadata: imageObjectData } = await this.s3
         .headObject({
           Bucket: userAssetsBucketName,
           Key: tmpKey,
         })
         .promise();
 
-      const newAwsKey = `${uuidv4()}${extname(tmpKey)}`;
-      await this.s3
-        .copyObject({
+      if (Number(imageObjectData.user) !== userId) {
+        return [false, SaveAvatarError.InvalidObjectUser, null];
+      }
+
+      const imageFileStream = await this.s3
+        .getObject({
           Bucket: userAssetsBucketName,
-          CopySource: `${userAssetsBucketName}/${tmpKey}`,
-          Key: newAwsKey,
+          Key: tmpKey,
+        })
+        .createReadStream();
+
+      const imageStorage = new ImageStorage(imageFileStream);
+
+      const filePath = await imageStorage.init();
+      const resizedFilePath = await imageStorage.resize(
+        filePath,
+        {
+          width: extractOptions.size,
+          height: extractOptions.size,
+          top: extractOptions.top,
+          left: extractOptions.left,
+        },
+        {
+          width: 200,
+          height: 200,
+        },
+      );
+      const resizedFileStream = createReadStream(resizedFilePath);
+
+      resizedFileStream.on('error', () => {
+        return [false, SaveAvatarError.ReadResizedFileError, null];
+      });
+
+      const awsKey = `${uuidv4()}.${imageStorage.imageExtension}`;
+      const uploadResult = await this.s3
+        .upload({
+          Bucket: userAssetsBucketName,
+          Body: resizedFileStream,
+          Key: awsKey,
           ACL: 'public-read',
+          Metadata: {
+            originalSize: imageStorage.imageSize.join(','),
+            extractSize: String(extractOptions.size),
+            extractTop: String(extractOptions.top),
+            extractLeft: String(extractOptions.left),
+            source: 'profile_avatar',
+            user: String(userId),
+          },
         })
         .promise();
 
@@ -177,15 +235,16 @@ export class ProfileService {
         null,
         {
           bucket: userAssetsBucketName,
-          key: newAwsKey,
-          url: this.awsConfigService.getUrlFromBucket(
-            userAssetsBucketName,
-            newAwsKey,
-          ),
+          key: uploadResult.Key,
+          url: uploadResult.Location,
         },
       ];
     } catch (error) {
       this.logger.error(error);
+
+      if (error instanceof StorageException) {
+        return [false, SaveAvatarError.ResizeFileError, null];
+      }
 
       return [false, SaveAvatarError.SaveToAWSError, null];
     }

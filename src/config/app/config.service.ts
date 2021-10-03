@@ -16,4 +16,12 @@ export class AppConfigService {
   get port(): number {
     return this.configService.get<number>('app.port');
   }
+
+  get docsPath(): string {
+    return this.configService.get<string>('app.docsPath');
+  }
+
+  get buildVersion(): string {
+    return this.configService.get<string>('app.buildVersion');
+  }
 }

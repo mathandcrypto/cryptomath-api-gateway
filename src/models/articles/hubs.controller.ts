@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -9,9 +10,12 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { GetHubsQueryDTO } from './dto/request/query/get-hubs.dto';
 import { HubsListResponseDTO } from './dto/response/hubs-list.dto';
+import { UploadHubLogoRequestDTO } from './dto/request/upload-hub-logo.dto';
+import { UploadHubLogoResponseDTO } from './dto/response/upload-hub-logo.dto';
 import { HubsService } from './hubs.service';
 import { FindMultipleError } from './enums/errors/find-multiple.enum';
 import { GetHubsException } from './constants/exceptions/get-hubs.exception';
@@ -26,9 +30,18 @@ import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Role } from '@common/enums/role.enum';
+import { FastifyFileInterceptor } from '@common/interceptors/fastify-file.interceptor';
+import { GetAuthUser } from '@common/decorators/requests/get-auth-user.decorator';
+import { AuthUser } from '@auth/interfaces/auth-user.interface';
+import { FastifyUploadedFile } from '@common/decorators/requests/fastify-uploaded-file.decorator';
+import { Multipart } from 'fastify-multipart';
+import { UploadHubLogoError } from '@models/articles/enums/errors/upload-hub-logo.enum';
+import { UploadHubLogoException } from './constants/exceptions/upload-hub-logo.exception';
+import { UploadHubLogoSerializerService } from './serializers/upload-hub-logo.serializer';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -42,6 +55,7 @@ export class HubsController {
   constructor(
     private readonly hubsService: HubsService,
     private readonly hubSerializerService: HubSerializerService,
+    private readonly uploadHubLogoSerializerService: UploadHubLogoSerializerService,
   ) {}
 
   @Get()
@@ -202,6 +216,69 @@ export class HubsController {
     }
 
     return await this.hubSerializerService.serialize(hub);
+  }
+
+  @Post(':hubId/logo/upload')
+  @HttpCode(200)
+  @UseInterceptors(FastifyFileInterceptor('logo'))
+  @ApiOperation({ summary: 'Upload hub logo image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadHubLogoRequestDTO })
+  @ApiResponse({
+    status: 200,
+    type: UploadHubLogoResponseDTO,
+    description: 'Uploaded hub logo data',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.Admin)
+  async uploadLogo(
+    @Param('id', ParseIntPipe) hubId: number,
+    @GetAuthUser() user: AuthUser,
+    @FastifyUploadedFile() multipart: Multipart,
+  ): Promise<UploadHubLogoResponseDTO> {
+    const [uploadLogoStatus, uploadLogoError, uploadLogoResponse] =
+      await this.hubsService.uploadLogo(hubId, user.id, multipart);
+
+    if (!uploadLogoStatus) {
+      switch (uploadLogoError) {
+        case UploadHubLogoError.InvalidImageFile:
+          throw new BadRequestException(
+            UploadHubLogoException.InvalidImageFile,
+          );
+        case UploadHubLogoError.InvalidImageFileSize:
+          throw new BadRequestException(
+            UploadHubLogoException.InvalidImageFileSize,
+          );
+        case UploadHubLogoError.InvalidImageSize:
+          throw new BadRequestException(
+            UploadHubLogoException.InvalidImageSize,
+          );
+        case UploadHubLogoError.SaveTempFileError:
+        case UploadHubLogoError.ReadTempFileError:
+          throw new InternalServerErrorException(
+            UploadHubLogoException.SaveTempFileError,
+          );
+        case UploadHubLogoError.UploadToAWSError:
+          throw new InternalServerErrorException(
+            UploadHubLogoException.UploadFileError,
+          );
+        default:
+          throw new InternalServerErrorException(
+            UploadHubLogoException.UnknownFileUploadError,
+          );
+      }
+    }
+
+    return await this.uploadHubLogoSerializerService.serialize(
+      uploadLogoResponse,
+    );
+  }
+
+  @Post(':hubId/logo/save')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Save selected image as hub logo' })
+  async saveLogo() {
+
   }
 
   @Post()

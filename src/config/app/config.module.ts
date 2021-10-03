@@ -14,6 +14,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           .default('development'),
         APP_URL: Joi.string(),
         APP_PORT: Joi.number().default(5000),
+        APP_DOCS_PATH: Joi.string().default('docs'),
+        APP_BUILD_VERSION: Joi.string().regex(
+          new RegExp(/^\d{1,2}.\d{1,2}.\d{1,2}$/),
+        ),
       }),
     }),
   ],

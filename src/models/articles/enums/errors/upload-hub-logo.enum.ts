@@ -1,4 +1,4 @@
-export enum UploadAvatarError {
+export enum UploadHubLogoError {
   InvalidImageFile = 'invalid_image_file',
   InvalidImageFileSize = 'invalid_image_file_size',
   InvalidImageSize = 'invalid_image_size',

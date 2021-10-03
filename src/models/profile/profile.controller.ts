@@ -93,19 +93,26 @@ export class ProfileController {
     description: 'Uploaded avatar data',
   })
   async uploadAvatar(
+    @GetAuthUser() user: AuthUser,
     @FastifyUploadedFile() multipart: Multipart,
   ): Promise<UploadAvatarResponseDTO> {
     const [uploadAvatarStatus, uploadAvatarError, uploadAvatarResponse] =
-      await this.profileService.uploadAvatar(multipart);
+      await this.profileService.uploadAvatar(user.id, multipart);
 
     if (!uploadAvatarStatus) {
       switch (uploadAvatarError) {
         case UploadAvatarError.InvalidImageFile:
           throw new BadRequestException(UploadAvatarException.InvalidImageFile);
-        case UploadAvatarError.ResizeFileError:
-        case UploadAvatarError.ReadResizedFileError:
+        case UploadAvatarError.InvalidImageFileSize:
+          throw new BadRequestException(
+            UploadAvatarException.InvalidImageFileSize,
+          );
+        case UploadAvatarError.InvalidImageSize:
+          throw new BadRequestException(UploadAvatarException.InvalidImageSize);
+        case UploadAvatarError.SaveTempFileError:
+        case UploadAvatarError.ReadTempFileError:
           throw new InternalServerErrorException(
-            UploadAvatarException.ResizingImageFileError,
+            UploadAvatarException.SaveTempFileError,
           );
         case UploadAvatarError.UploadToAWSError:
           throw new InternalServerErrorException(
@@ -134,15 +141,17 @@ export class ProfileController {
   })
   async saveAvatar(
     @GetAuthUser() user: AuthUser,
-    @Body() { key }: SaveAvatarRequestDTO,
+    @Body() { key, extract }: SaveAvatarRequestDTO,
   ): Promise<AvatarResponseDTO> {
     const [saveAvatarStatus, saveAvatarError, saveAvatarResponse] =
-      await this.profileService.saveAvatar(key);
+      await this.profileService.saveAvatar(user.id, extract, key);
 
     if (!saveAvatarStatus) {
       switch (saveAvatarError) {
         case SaveAvatarError.InvalidObjectKey:
           throw new BadRequestException(SaveAvatarException.InvalidObjectKey);
+        case SaveAvatarError.ResizeFileError:
+        case SaveAvatarError.ReadResizedFileError:
         case SaveAvatarError.SaveToAWSError:
           throw new InternalServerErrorException(
             SaveAvatarException.SaveToStorageError,

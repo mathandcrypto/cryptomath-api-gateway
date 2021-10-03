@@ -1,11 +1,11 @@
-export const UploadAvatarException = {
+export const UploadHubLogoException = {
   InvalidImageFile: {
     code: 'invalid_image_file',
     message: 'Invalid image file. Allowed .jpeg or .png extensions',
   },
   InvalidImageFileSize: {
     code: 'invalid_image_file_size',
-    message: 'Invalid image file size. The size is allowed up to 200 kb.',
+    message: 'Invalid image file size. The size is allowed up to 500 kb.',
   },
   InvalidImageSize: {
     code: 'invalid_image_size',

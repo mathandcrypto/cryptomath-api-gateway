@@ -21,11 +21,11 @@ export class AWSConfigService {
     return this.configService.get<string>('aws.userAssetsBucketName');
   }
 
-  get tmpObjectsPrefix(): string {
-    return this.configService.get<string>('aws.tmpObjectsPrefix');
+  get hubsAssetsBucketName(): string {
+    return this.configService.get<string>('aws.hubsAssetsBucketName');
   }
 
-  getUrlFromBucket(bucketName: string, fileName: string): string {
-    return `https://${bucketName}.s3.${this.region}.amazonaws.com/${fileName}`;
+  get tmpObjectsPrefix(): string {
+    return this.configService.get<string>('aws.tmpObjectsPrefix');
   }
 }
